@@ -129,8 +129,8 @@ const AdminDashboardPage = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.owner?.name || 'N/A'}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{p.status.replace(/_/g, ' ')}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
-                                        <Link to={`/project/${p._id}/edit`} className="text-indigo-600 hover:text-indigo-900"><Edit className="w-4 h-4"/></Link>
-                                        <button onClick={() => deleteProjectHandler(p._id)} className="text-red-600 hover:text-red-900"><Trash2 className="w-4 h-4"/></button>
+                                        <Link to={`/project/${p._id}/edit`} className="text-indigo-600 hover:text-indigo-900 inline-flex items-center"><Edit className="w-4 h-4"/></Link>
+                                        <button onClick={() => deleteProjectHandler(p._id)} className="text-red-600 hover:text-red-900 inline-flex items-center"><Trash2 className="w-4 h-4"/></button>
                                     </td>
                                 </tr>
                                ))}
