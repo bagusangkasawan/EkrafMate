@@ -4,30 +4,30 @@ import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedroc
 dotenv.config();
 
 const client = new BedrockRuntimeClient({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-  }
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    }
 });
 
 export const generateEmbedding = async (inputText) => {
-  const payload = { inputText };
-  const command = new InvokeModelCommand({
-    modelId: 'amazon.titan-embed-text-v2:0',
-    contentType: 'application/json',
-    accept: 'application/json',
-    body: JSON.stringify(payload)
-  });
+    const payload = { inputText };
+    const command = new InvokeModelCommand({
+        modelId: 'amazon.titan-embed-text-v2:0',
+        contentType: 'application/json',
+        accept: 'application/json',
+        body: JSON.stringify(payload)
+    });
 
-  try {
-    const response = await client.send(command);
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-    return responseBody.embedding;
-  } catch (error) {
-    console.error('Error calling Titan Embedding model:', error);
-    throw new Error('Failed to generate embedding.');
-  }
+    try {
+        const response = await client.send(command);
+        const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+        return responseBody.embedding;
+    } catch (error) {
+        console.error('Error calling Titan Embedding model:', error);
+        throw new Error('Failed to generate embedding.');
+    }
 };
 
 export const generateDescription = async (prompt) => {

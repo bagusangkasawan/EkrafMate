@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import { Save, Wand2 } from 'lucide-react';
 
 const ProjectEditPage = () => {
@@ -82,7 +82,7 @@ const ProjectEditPage = () => {
                         <label className="block text-sm font-medium text-gray-700">Deskripsi</label>
                         <textarea value={project.description} onChange={e => setProject({ ...project, description: e.target.value })} rows="5" className="mt-1 w-full p-2 border rounded-md" />
                         <div className="flex justify-end mt-2">
-                           <button
+                            <button
                                 type="button"
                                 onClick={handleGenerateDescription}
                                 disabled={genLoading}

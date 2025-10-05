@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
-import VerificationNotice from '../components/VerificationNotice';
+import VerificationNotice from '../../components/layout/VerificationNotice';
 import { Link } from 'react-router-dom';
-import { Wand2, Save, Maximize2, X } from 'lucide-react';
+import { Wand2, Save, Maximize2, X, DollarSign, Briefcase, CheckCircle } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+import { fetchUserProfile } from '../../redux/slices/authSlice';
 
 const CreativeDashboardPage = () => {
     const { userInfo } = useAuth();
@@ -13,6 +15,11 @@ const CreativeDashboardPage = () => {
     const [loading, setLoading] = useState(true);
     const [genLoading, setGenLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const dispatch = useDispatch();
+
+    const [totalEarnings, setTotalEarnings] = useState(0);
+    const [activeProjects, setActiveProjects] = useState([]);
+    const [completedProjects, setCompletedProjects] = useState([]);
 
     const fetchProfile = useCallback(async () => {
         try {
@@ -38,15 +45,28 @@ const CreativeDashboardPage = () => {
             toast.error("Gagal memuat proyek yang ditugaskan.");
         }
     }, [userInfo.token]);
-    
+
     useEffect(() => {
+        dispatch(fetchUserProfile());
         const loadData = async () => {
             setLoading(true);
             await Promise.all([fetchProfile(), fetchAssignedProjects()]);
             setLoading(false);
         };
         loadData();
-    }, [fetchProfile, fetchAssignedProjects]);
+    }, [dispatch, fetchProfile, fetchAssignedProjects]);
+
+    useEffect(() => {
+        if (assignedProjects) {
+            const active = assignedProjects.filter(p => p.status === 'in_progress' || p.status === 'pending_approval');
+            const completed = assignedProjects.filter(p => p.status === 'closed');
+            const earnings = completed.reduce((acc, project) => acc + (project.budget || 0), 0);
+
+            setActiveProjects(active);
+            setCompletedProjects(completed);
+            setTotalEarnings(earnings);
+        }
+    }, [assignedProjects]);
 
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
@@ -69,7 +89,7 @@ const CreativeDashboardPage = () => {
             setProfile(p => ({ ...p, description: data.description }));
             toast.success('Deskripsi berhasil dibuat oleh AI!');
         } catch (error) {
-             toast.error('Gagal membuat deskripsi.');
+            toast.error('Gagal membuat deskripsi.');
         } finally {
             setGenLoading(false);
         }
@@ -86,6 +106,8 @@ const CreativeDashboardPage = () => {
         }
     };
 
+    const isPrerequisitesMet = profile.headline.trim() !== '' && profile.skills.trim() !== '';
+
     if (loading) return <div className="text-center py-10">Loading...</div>;
 
     return (
@@ -94,8 +116,33 @@ const CreativeDashboardPage = () => {
             <h1 className="text-3xl font-bold text-gray-800">Dashboard Pelaku Kreatif</h1>
             <p className="mt-2 text-gray-600">Atur profil Anda dan kelola proyek yang sedang berjalan.</p>
 
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
+                    <div className="bg-blue-100 p-3 rounded-full"><Briefcase className="h-6 w-6 text-blue-600"/></div>
+                    <div className="ml-4">
+                        <h3 className="text-sm font-medium text-gray-500">Proyek Aktif</h3>
+                        <p className="mt-1 text-2xl font-semibold text-gray-900">{activeProjects.length}</p>
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
+                    <div className="bg-green-100 p-3 rounded-full"><CheckCircle className="h-6 w-6 text-green-600"/></div>
+                    <div className="ml-4">
+                        <h3 className="text-sm font-medium text-gray-500">Proyek Selesai</h3>
+                        <p className="mt-1 text-2xl font-semibold text-gray-900">{completedProjects.length}</p>
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
+                    <div className="bg-yellow-100 p-3 rounded-full"><DollarSign className="h-6 w-6 text-yellow-600"/></div>
+                    <div className="ml-4">
+                        <h3 className="text-sm font-medium text-gray-500">Total Pendapatan</h3>
+                        <p className="mt-1 text-2xl font-semibold text-gray-900">
+                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalEarnings)}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-                {/* Kolom Profil */}
                 <div className="lg:col-span-2 bg-white p-8 rounded-lg shadow-md">
                     <h2 className="text-2xl font-bold mb-6">Edit Profil</h2>
                     <form onSubmit={handleUpdateProfile} className="space-y-4">
@@ -107,24 +154,29 @@ const CreativeDashboardPage = () => {
                             <label className="block text-sm font-medium text-gray-700">Headline (Contoh: UI/UX Designer)</label>
                             <input type="text" value={profile.headline} onChange={e => setProfile({...profile, headline: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                         </div>
-                         <div>
+                        <div>
                             <label className="block text-sm font-medium text-gray-700">Keahlian (pisahkan dengan koma)</label>
                             <input type="text" value={profile.skills} onChange={e => setProfile({...profile, skills: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Deskripsi</label>
+                            {!isPrerequisitesMet && (
+                                <p className="text-xs text-red-500 mt-1">Harap isi Headline dan Keahlian terlebih dahulu untuk mengaktifkan deskripsi.</p>
+                            )}
                             <textarea
                                 value={profile.description}
                                 onChange={e => setProfile({...profile, description: e.target.value})}
                                 rows="5"
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                disabled={!isPrerequisitesMet}
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                placeholder={!isPrerequisitesMet ? 'Isi Headline dan Keahlian untuk memulai...' : 'Ceritakan tentang diri Anda...'}
                             ></textarea>
                             <div className="mt-2 flex gap-2">
                                 <button
                                     type="button"
                                     onClick={handleGenerateDescription}
-                                    disabled={genLoading}
-                                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300"
+                                    disabled={genLoading || !isPrerequisitesMet}
+                                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed"
                                 >
                                     <Wand2 className="h-4 w-4 mr-2" />
                                     {genLoading ? 'Membuat...' : 'Buat dengan AI'}
@@ -132,7 +184,8 @@ const CreativeDashboardPage = () => {
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(true)}
-                                    className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md shadow-sm bg-gray-100 hover:bg-gray-200"
+                                    disabled={!isPrerequisitesMet}
+                                    className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md shadow-sm bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:cursor-not-allowed"
                                 >
                                     <Maximize2 className="h-4 w-4 mr-2" /> Perluas
                                 </button>
@@ -143,31 +196,50 @@ const CreativeDashboardPage = () => {
                         </button>
                     </form>
                 </div>
-                {/* Kolom Proyek Berjalan */}
                 <div className="bg-white p-8 rounded-lg shadow-md">
-                    <h2 className="text-2xl font-bold mb-6">Proyek Anda</h2>
-                    <div className="space-y-4">
-                    {assignedProjects.length > 0 ? (
-                        assignedProjects.map(project => (
+                    <h2 className="text-2xl font-bold mb-6">Proyek Aktif</h2>
+                    <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
+                    {activeProjects.length > 0 ? (
+                        activeProjects.map(project => (
                         <div key={project._id} className="border p-4 rounded-md">
                             <h3 className="font-bold text-lg">{project.title}</h3>
                             <p className="text-sm text-gray-500 capitalize">Status: {project.status.replace('_', ' ')}</p>
                             <div className="mt-4 flex gap-2">
-                                <Link to={`/project/${project._id}`} className="text-sm text-indigo-600 hover:underline">Lihat Detail</Link>
+                                <Link to={`/project/${project._id}`} className="px-3 py-1 text-sm font-medium text-indigo-600 border border-gray-300 rounded-md hover:text-white hover:bg-indigo-600">Lihat Detail</Link>
                                 {project.status === 'in_progress' && (
-                                    <button onClick={() => handleCompleteProject(project._id)} className="text-sm text-green-600 hover:underline">Tandai Selesai</button>
+                                    <button onClick={() => handleCompleteProject(project._id)} className="px-3 py-1 text-sm font-medium text-green-600 border border-gray-300 rounded-md hover:text-white hover:bg-green-600">Tandai Selesai</button>
                                 )}
                             </div>
                         </div>
                         ))
                     ) : (
-                        <p className="text-gray-500">Anda belum mengerjakan proyek apapun.</p>
+                        <p className="text-gray-500">Tidak ada proyek aktif.</p>
+                    )}
+                    </div>
+
+                    <h2 className="text-2xl font-bold my-6 border-t pt-6">Riwayat Proyek</h2>
+                    <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
+                    {completedProjects.length > 0 ? (
+                        completedProjects.map(project => (
+                        <div key={project._id} className="border p-4 rounded-md bg-gray-50">
+                            <div className="flex justify-between items-start">
+                                <h3 className="font-semibold text-gray-800 flex-1">{project.title}</h3>
+                                {project.budget && (
+                                    <p className="text-sm font-semibold text-green-700 ml-2">
+                                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(project.budget)}
+                                    </p>
+                                )}
+                            </div>
+                            <Link to={`/project/${project._id}`} className="px-3 py-1 text-sm font-medium text-indigo-600 border border-gray-300 rounded-md hover:text-white hover:bg-indigo-600 mt-2 inline-block">Lihat Detail</Link>
+                        </div>
+                        ))
+                    ) : (
+                        <p className="text-gray-500">Anda belum menyelesaikan proyek.</p>
                     )}
                     </div>
                 </div>
             </div>
 
-            {/* Modal untuk edit deskripsi */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="bg-white w-full max-w-2xl rounded-lg shadow-lg p-6 relative">

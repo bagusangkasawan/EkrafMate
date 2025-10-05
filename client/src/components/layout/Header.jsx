@@ -1,16 +1,18 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import { useDispatch } from 'react-redux';
-import { logout } from '../redux/slices/authSlice';
-import { LogOut, LayoutDashboard, User, Briefcase, Search as SearchIcon, Settings } from 'lucide-react';
+import { logout } from '../../redux/slices/authSlice';
+import { HeartHandshake, LogOut, LayoutDashboard, User, Briefcase, Search as SearchIcon, Settings } from 'lucide-react';
 
 const Header = () => {
   const { userInfo } = useAuth();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const logoutHandler = () => {
+    sessionStorage.removeItem('chatbotMessages');
     dispatch(logout());
     navigate('/login');
   };
@@ -29,12 +31,40 @@ const Header = () => {
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex-shrink-0">
-            <Link to="/" className="text-2xl font-bold text-indigo-600">EkrafMate</Link>
+          <div className="flex-shrink-0 flex items-center gap-2">
+            <HeartHandshake className="w-7 h-7 text-indigo-600" />
+            <Link to="/" className="text-2xl font-bold text-indigo-600">
+              EkrafMate
+            </Link>
           </div>
           <nav className="hidden md:flex md:items-center md:space-x-8">
-            <Link to="/search" className="text-gray-600 hover:text-indigo-600 font-medium flex items-center"><SearchIcon className="w-4 h-4 mr-2"/>Cari Talenta</Link>
-            <Link to="/projects" className="text-gray-600 hover:text-indigo-600 font-medium flex items-center"><Briefcase className="w-4 h-4 mr-2"/>Jelajahi Proyek</Link>
+            <NavLink
+              to="/search"
+              className={({ isActive }) =>
+                `font-medium flex items-center ${
+                  isActive
+                    ? "text-indigo-600"
+                    : "text-gray-600 hover:text-indigo-600"
+                }`
+              }
+            >
+              <SearchIcon className="w-4 h-4 mr-2" />
+              Cari Talenta
+            </NavLink>
+
+            <NavLink
+              to="/projects"
+              className={({ isActive }) =>
+                `font-medium flex items-center ${
+                  isActive
+                    ? "text-indigo-600"
+                    : "text-gray-600 hover:text-indigo-600"
+                }`
+              }
+            >
+              <Briefcase className="w-4 h-4 mr-2" />
+              Jelajahi Proyek
+            </NavLink>
           </nav>
           <div className="flex items-center">
             {userInfo ? (
@@ -69,8 +99,26 @@ const Header = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-2 md:space-x-4">
-                <Link to="/login" className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md font-medium">Login</Link>
-                <Link to="/register" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 font-medium shadow-sm">Daftar</Link>
+                <Link
+                  to="/login"
+                  className={`px-4 py-2 border border-indigo-600 rounded-md font-medium transition ${
+                    location.pathname === "/login"
+                      ? "bg-indigo-600 text-white"
+                      : "text-indigo-600 hover:bg-indigo-600 hover:text-white"
+                  }`}
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className={`px-4 py-2 border border-indigo-600 rounded-md font-medium transition ${
+                    location.pathname === "/register"
+                      ? "bg-indigo-600 text-white"
+                      : "text-indigo-600 hover:bg-indigo-600 hover:text-white"
+                  }`}
+                >
+                  Daftar
+                </Link>
               </div>
             )}
           </div>

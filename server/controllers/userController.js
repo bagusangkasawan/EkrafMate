@@ -129,7 +129,9 @@ export const generateProfileDescription = asyncHandler(async (req, res) => {
 // @route   GET /api/users/:id
 // @access  Public
 export const getPublicProfileById = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.params.id).select('-password -profileEmbedding');
+    const user = await User.findById(req.params.id)
+        .select('-password -profileEmbedding')
+        .populate('portfolio', 'title');
 
     if (user) {
         res.json(user);

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 
 const VerificationNotice = () => {
     const { userInfo } = useAuth();

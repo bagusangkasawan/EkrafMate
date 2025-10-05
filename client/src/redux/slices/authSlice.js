@@ -28,11 +28,33 @@ export const register = createAsyncThunk('auth/register', async (userData, { rej
     }
 });
 
+export const fetchUserProfile = createAsyncThunk(
+  'auth/fetchProfile',
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const { auth: { userInfo } } = getState();
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/profile`, config);
+      const updatedUserInfo = { ...userInfo, ...data };
+      localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+      return updatedUserInfo;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Gagal mengambil data profil.');
+    }
+  }
+);
 
 export const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
+    clearAuthState: (state) => {
+      state.error = null;
+    },
     logout: (state) => {
       localStorage.removeItem('userInfo');
       state.userInfo = null;
@@ -48,7 +70,7 @@ export const authSlice = createSlice({
             localStorage.setItem('userInfo', JSON.stringify(state.userInfo));
         }
     },
-    updateUserProfileInfo: (state, action) => { // Reducer baru
+    updateUserProfileInfo: (state, action) => {
         state.userInfo = action.payload;
         localStorage.setItem('userInfo', JSON.stringify(action.payload));
     }
@@ -78,9 +100,20 @@ export const authSlice = createSlice({
       .addCase(register.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(fetchUserProfile.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchUserProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.userInfo = action.payload;
+      })
+      .addCase(fetchUserProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { logout, updateUserInfo, updateVerificationStatus, updateUserProfileInfo } = authSlice.actions;
+export const { logout, updateUserInfo, updateVerificationStatus, updateUserProfileInfo, clearAuthState } = authSlice.actions;
 export default authSlice.reducer;

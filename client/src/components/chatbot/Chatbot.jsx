@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Bot } from 'lucide-react';
 import axios from 'axios';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 
 const Chatbot = () => {
     const { userInfo } = useAuth();
@@ -25,13 +25,19 @@ const Chatbot = () => {
     const chatEndRef = useRef(null);
 
     useEffect(() => {
+        if (!userInfo) {
+            sessionStorage.removeItem('chatbotMessages');
+            setMessages([{ sender: 'bot', text: 'Halo! Saya MateBot, asisten virtual Anda. Ada yang bisa saya bantu?' }]);
+        }
+    }, [userInfo]);
+
+    useEffect(() => {
         try {
             sessionStorage.setItem('chatbotMessages', JSON.stringify(messages));
         } catch (error) {
             console.error("Gagal menyimpan pesan ke sessionStorage:", error);
         }
     }, [messages]);
-
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -84,7 +90,7 @@ const Chatbot = () => {
         <>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="fixed bottom-5 right-5 bg-indigo-600 text-white p-4 rounded-full shadow-lg hover:bg-indigo-700 transition-transform transform hover:scale-110 focus:outline-none z-50"
+                className="fixed bottom-5 right-5 bg-indigo-600 text-white p-6 rounded-full shadow-lg hover:bg-indigo-700 transition-transform transform hover:scale-110 focus:outline-none z-50"
             >
                 {isOpen ? <X /> : <MessageSquare />}
             </button>
@@ -110,7 +116,7 @@ const Chatbot = () => {
                                 </div>
                             </div>
                         ))}
-                         {loading && (
+                        {loading && (
                             <div className="my-2 flex justify-start">
                                 <span className="inline-block p-3 rounded-lg bg-gray-200 text-gray-800">
                                     <span className="animate-pulse">...</span>

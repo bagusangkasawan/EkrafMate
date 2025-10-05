@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { useAuth } from '../hooks/useAuth';
-import { login } from '../redux/slices/authSlice';
+import { useAuth } from '../../hooks/useAuth';
+import { login, clearAuthState } from '../../redux/slices/authSlice';
 import toast from 'react-hot-toast';
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -31,7 +31,10 @@ const LoginPage = () => {
         if (error) {
             toast.error(error);
         }
-    }, [userInfo, navigate, error]);
+        return () => {
+            dispatch(clearAuthState());
+        };
+    }, [userInfo, navigate, error, dispatch]);
 
     const submitHandler = (e) => {
         e.preventDefault();
@@ -58,7 +61,7 @@ const LoginPage = () => {
                         </button>
                     </div>
                 </form>
-                 <div className="text-sm text-center">
+                <div className="text-sm text-center">
                     <p>Belum punya akun? <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500">Daftar di sini</Link></p>
                 </div>
             </div>

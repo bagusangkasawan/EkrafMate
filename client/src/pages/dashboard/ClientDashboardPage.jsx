@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
-import { Plus, Check, Wand2, Edit, Users, Trash2 } from 'lucide-react';
-import VerificationNotice from '../components/VerificationNotice';
+import { Plus, Check, Wand2, Edit, Users, Trash2, Briefcase, Clock, DollarSign } from 'lucide-react';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
+import VerificationNotice from '../../components/layout/VerificationNotice';
+import { useDispatch } from 'react-redux';
+import { fetchUserProfile } from '../../redux/slices/authSlice';
 
 const ClientDashboardPage = () => {
     const { userInfo } = useAuth();
@@ -14,6 +17,9 @@ const ClientDashboardPage = () => {
     const [newProject, setNewProject] = useState({ title: '', description: '', skills: '', budget: '' });
     const [loading, setLoading] = useState(true);
     const [genLoading, setGenLoading] = useState(false);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [selectedProjectId, setSelectedProjectId] = useState(null);
+    const dispatch = useDispatch();
 
     const fetchProjects = useCallback(async () => {
         try {
@@ -26,9 +32,16 @@ const ClientDashboardPage = () => {
     }, [userInfo.token]);
 
     useEffect(() => {
+        dispatch(fetchUserProfile());
         setLoading(true);
         fetchProjects().finally(() => setLoading(false));
-    }, [fetchProjects]);
+    }, [dispatch, fetchProjects]);
+
+    const stats = useMemo(() => {
+        const active = projects.filter(p => p.status === 'in_progress' || p.status === 'pending_approval' || p.status === 'open').length;
+        const totalSpent = projects.filter(p => p.status === 'closed').reduce((acc, p) => acc + (p.budget || 0), 0);
+        return { total: projects.length, active, totalSpent };
+    }, [projects]);
 
     const handleCreateProject = async (e) => {
         e.preventDefault();
@@ -78,16 +91,20 @@ const ClientDashboardPage = () => {
         }
     };
 
-    const handleDeleteProject = async (projectId) => {
-        if (window.confirm('Apakah Anda yakin ingin menghapus proyek ini? Tindakan ini tidak dapat dibatalkan.')) {
-            try {
-                const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-                await axios.delete(`${import.meta.env.VITE_API_URL}/api/projects/${projectId}`, config);
-                toast.success('Proyek berhasil dihapus.');
-                fetchProjects();
-            } catch (error) {
-                toast.error(error.response?.data?.message || 'Gagal menghapus proyek.');
-            }
+    const handleDeleteClick = (projectId) => {
+        setSelectedProjectId(projectId);
+        setIsConfirmOpen(true);
+    };
+
+    const handleDeleteProject = async () => {
+        setIsConfirmOpen(false);
+        try {
+            const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/projects/${selectedProjectId}`, config);
+            toast.success("Proyek berhasil dihapus.");
+            fetchProjects();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Gagal menghapus proyek.");
         }
     };
 
@@ -103,7 +120,7 @@ const ClientDashboardPage = () => {
             setApplicantsModal({ isOpen: false, applicants: [], projectId: null });
             fetchProjects();
         } catch (error) {
-             toast.error(error.response?.data?.message || 'Gagal menerima pelamar.');
+            toast.error(error.response?.data?.message || 'Gagal menerima pelamar.');
         }
     };
 
@@ -120,6 +137,32 @@ const ClientDashboardPage = () => {
                 <button onClick={() => setShowModal(true)} className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center shadow-sm">
                     <Plus className="w-5 h-5 mr-2" /> Buat Proyek Baru
                 </button>
+            </div>
+
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
+                    <div className="bg-blue-100 p-3 rounded-full"><Briefcase className="h-6 w-6 text-blue-600"/></div>
+                    <div className="ml-4">
+                        <h3 className="text-sm font-medium text-gray-500">Total Proyek</h3>
+                        <p className="mt-1 text-2xl font-semibold text-gray-900">{stats.total}</p>
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
+                    <div className="bg-orange-100 p-3 rounded-full"><Clock className="h-6 w-6 text-orange-600"/></div>
+                    <div className="ml-4">
+                        <h3 className="text-sm font-medium text-gray-500">Proyek Aktif</h3>
+                        <p className="mt-1 text-2xl font-semibold text-gray-900">{stats.active}</p>
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
+                    <div className="bg-green-100 p-3 rounded-full"><DollarSign className="h-6 w-6 text-green-600"/></div>
+                    <div className="ml-4">
+                        <h3 className="text-sm font-medium text-gray-500">Total Anggaran Terpakai</h3>
+                        <p className="mt-1 text-2xl font-semibold text-gray-900">
+                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(stats.totalSpent)}
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div className="mt-8 bg-white p-8 rounded-lg shadow-md">
@@ -141,9 +184,24 @@ const ClientDashboardPage = () => {
                                         <p className="text-sm text-gray-500 capitalize">Status: {p.status.replace(/_/g, ' ')}</p>
                                         {p.creative && <p className="text-sm text-gray-500">Dikerjakan oleh: {p.creative.name}</p>}
                                     </div>
-                                    <div className="flex items-center gap-4">
-                                        <Link to={`/project/${p._id}/edit`} className="text-gray-500 hover:text-indigo-600 p-1 rounded-full"><Edit className="w-4 h-4" /></Link>
-                                        <button onClick={() => handleDeleteProject(p._id)} className="text-red-600 hover:text-red-500 p-1 rounded-full"><Trash2 className="w-4 h-4" /></button>
+                                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                                        {p.status !== 'closed' && (
+                                            <>
+                                                <Link to={`/project/${p._id}/edit`} className="inline-flex items-center gap-2 px-3 py-1 text-sm font-medium text-indigo-600 border border-gray-300 rounded-md hover:bg-indigo-600 hover:text-white">
+                                                    <Edit className="w-4 h-4" /> Edit
+                                                </Link>
+                                                <button onClick={() => handleDeleteClick(p._id)} className="inline-flex items-center gap-2 px-3 py-1 text-sm font-medium text-red-600 border border-gray-300 rounded-md hover:bg-red-600 hover:text-white">
+                                                    <Trash2 className="w-4 h-4" /> Hapus
+                                                </button>
+                                                <ConfirmDialog
+                                                    isOpen={isConfirmOpen}
+                                                    title="Hapus Proyek"
+                                                    message="Apakah Anda yakin ingin menghapus proyek ini? Tindakan ini tidak dapat dibatalkan."
+                                                    onCancel={() => setIsConfirmOpen(false)}
+                                                    onConfirm={handleDeleteProject}
+                                                />
+                                            </>
+                                        )}
                                         
                                         {p.status === 'open' && p.applicants && p.applicants.length > 0 && (
                                             <button onClick={() => setApplicantsModal({ isOpen: true, applicants: p.applicants, projectId: p._id })} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center text-sm">

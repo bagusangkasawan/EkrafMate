@@ -1,4 +1,5 @@
 import Project from '../models/Project.js';
+import User from '../models/User.js';
 import { generateEmbedding as ge, generateDescription as gd } from '../services/bedrockService.js';
 import asyncHandler from 'express-async-handler';
 
@@ -80,8 +81,13 @@ export const getMyProjects = asyncHandler(async (req, res) => {
 // @route   PUT /api/projects/:id/apply
 // @access  Private/Creative
 export const applyForProject = asyncHandler(async (req, res) => {
-    const project = await Project.findById(req.params.id);
+    const creativeUser = await User.findById(req.user._id);
+    if (!creativeUser.description) {
+        res.status(403);
+        throw new Error('Harap lengkapi deskripsi profil Anda sebelum mengambil proyek.');
+    }
 
+    const project = await Project.findById(req.params.id);
     if (project && project.status === 'open') {
         // Cek apakah user sudah apply
         if (project.applicants.includes(req.user._id)) {
@@ -175,6 +181,16 @@ export const closeProject = asyncHandler(async (req, res) => {
     const project = await Project.findById(req.params.id);
     if (project && project.owner.equals(req.user._id) && project.status === 'pending_approval') {
         project.status = 'closed';
+        if (project.creative) {
+            const creativeUser = await User.findById(project.creative);
+            if (creativeUser) {
+                const isAlreadyInPortfolio = creativeUser.portfolio.some(p => p.equals(project._id));
+                if (!isAlreadyInPortfolio) {
+                    creativeUser.portfolio.push(project._id);
+                    await creativeUser.save();
+                }
+            }
+        }
         const updatedProject = await project.save();
         res.json(updatedProject);
     } else {

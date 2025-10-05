@@ -14,7 +14,10 @@ const userSchema = new mongoose.Schema({
   headline: { type: String },
   description: { type: String },
   skills: [{ type: String }],
-  portfolio: [{ title: String, url: String }],
+  portfolio: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Project'
+  }],
   profileEmbedding: { type: [Number] }
 }, { timestamps: true });
 

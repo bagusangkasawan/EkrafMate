@@ -41,7 +41,7 @@ const SearchPage = () => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Contoh: desainer logo untuk brand kopi modern"
                 />
-                <button type="submit" disabled={loading} className="bg-indigo-600 text-white px-6 py-3 rounded-r-lg hover:bg-indigo-700 disabled:bg-indigo-400 flex items-center">
+                <button type="submit" disabled={loading || !query.trim()} className="bg-indigo-600 text-white px-6 py-3 rounded-r-lg hover:bg-indigo-700 disabled:bg-indigo-400 flex items-center">
                     <Search className="w-5 h-5 md:mr-2" />
                     <span className="hidden md:inline">{loading ? 'Mencari...' : 'Cari'}</span>
                 </button>

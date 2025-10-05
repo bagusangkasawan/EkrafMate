@@ -1,25 +1,26 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import SearchPage from './pages/SearchPage';
+import Header from './components/layout/Header';
+import Footer from './components/layout/Footer';
+import HomePage from './pages/home/HomePage';
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
+import SearchPage from './pages/search/SearchPage';
 import NotFoundPage from './pages/NotFoundPage';
-import ProtectedRoute from './components/ProtectedRoute';
-import CreativeDashboardPage from './pages/CreativeDashboardPage';
-import ClientDashboardPage from './pages/ClientDashboardPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
-import Chatbot from './components/Chatbot';
-import PublicProfilePage from './pages/PublicProfilePage';
-import ProfileSettingsPage from './pages/ProfileSettingsPage';
-import AdminUserEditPage from './pages/AdminUserEditPage';
-import VerificationPage from './pages/VerificationPage';
-import ProjectListPage from './pages/ProjectListPage';
-import ProjectDetailPage from './pages/ProjectDetailPage';
-import ProjectEditPage from './pages/ProjectEditPage';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import CreativeDashboardPage from './pages/dashboard/CreativeDashboardPage';
+import ClientDashboardPage from './pages/dashboard/ClientDashboardPage';
+import AdminDashboardPage from './pages/dashboard/AdminDashboardPage';
+import DashboardRedirect from './components/dashboard/DashboardRedirect';
+import Chatbot from './components/chatbot/Chatbot';
+import PublicProfilePage from './pages/profile/PublicProfilePage';
+import ProfileSettingsPage from './pages/profile/ProfileSettingsPage';
+import AdminUserEditPage from './pages/dashboard/AdminUserEditPage';
+import VerificationPage from './pages/auth/VerificationPage';
+import ProjectListPage from './pages/projects/ProjectListPage';
+import ProjectDetailPage from './pages/projects/ProjectDetailPage';
+import ProjectEditPage from './pages/projects/ProjectEditPage';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
           
           {/* Rute Terproteksi */}
           <Route element={<ProtectedRoute allowedRoles={['creative', 'client', 'admin']} />}>
+            <Route path="/dashboard" element={<DashboardRedirect />} />
             <Route path="/settings/profile" element={<ProfileSettingsPage />} />
           </Route>
           <Route element={<ProtectedRoute allowedRoles={['creative']} />}>
