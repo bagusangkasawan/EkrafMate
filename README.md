@@ -127,12 +127,12 @@ EkrafMate dibangun dengan **arsitektur modern berbasis layanan AWS**.
 
 ### ☁️ Backend
 - **Framework:** Node.js (Express.js)  
-- **Deployment:** AWS App Runner  
+- **Deployment:** AWS App Runner [(https://4hvtinacn2.ap-southeast-2.awsapprunner.com)](https://4hvtinacn2.ap-southeast-2.awsapprunner.com)
 - **Custom Domain:** [https://ekrafmate-backend.mategroup.web.id](https://ekrafmate-backend.mategroup.web.id)
 
 ### 🌐 Frontend
 - **Framework:** React.js  
-- **Deployment:** AWS Amplify  
+- **Deployment:** AWS Amplify [(https://main.d2jg1c9nh1d2iv.amplifyapp.com)](https://main.d2jg1c9nh1d2iv.amplifyapp.com/)
 - **Custom Domain:** [https://ekrafmate.mategroup.web.id](https://ekrafmate.mategroup.web.id)
 
 ### 🗄️ Database
