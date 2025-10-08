@@ -117,7 +117,13 @@ Chatbot AI membantu pengguna memahami fitur platform dan menjawab pertanyaan umu
 
 ## ⚙️ Arsitektur Teknologi
 
-EkrafMate dibangun dengan **arsitektur modern berbasis layanan AWS**.
+EkrafMate dibangun dengan **arsitektur modern berbasis layanan AWS** dan dirancang agar **dapat digunakan secara lintas platform (cross-platform)** melalui dukungan **Progressive Web App (PWA)**.
+
+Dengan dukungan PWA, pengguna dapat:
+
+* **Mengakses EkrafMate dari berbagai perangkat** (desktop, tablet, dan smartphone).
+* **Menambahkan aplikasi ke home screen** layaknya aplikasi native.
+* **Mendapatkan pengalaman offline & performa cepat**, berkat caching dan service worker.
 
 ### 🧠 Artificial Intelligence (Amazon Bedrock)
 - **Model Embedding:** `amazon.titan-embed-text-v2:0`  
@@ -127,13 +133,14 @@ EkrafMate dibangun dengan **arsitektur modern berbasis layanan AWS**.
 
 ### ☁️ Backend
 - **Framework:** Node.js (Express.js)  
-- **Deployment:** AWS App Runner [(https://4hvtinacn2.ap-southeast-2.awsapprunner.com)](https://4hvtinacn2.ap-southeast-2.awsapprunner.com)
+- **Deployment:** AWS App Runner ([https://4hvtinacn2.ap-southeast-2.awsapprunner.com](https://4hvtinacn2.ap-southeast-2.awsapprunner.com))
 - **Custom Domain:** [https://ekrafmate-backend.mategroup.web.id](https://ekrafmate-backend.mategroup.web.id)
 
 ### 🌐 Frontend
 - **Framework:** React.js  
-- **Deployment:** AWS Amplify [(https://main.d2jg1c9nh1d2iv.amplifyapp.com)](https://main.d2jg1c9nh1d2iv.amplifyapp.com/)
+- **Deployment:** AWS Amplify ([https://main.d2jg1c9nh1d2iv.amplifyapp.com](https://main.d2jg1c9nh1d2iv.amplifyapp.com))
 - **Custom Domain:** [https://ekrafmate.mategroup.web.id](https://ekrafmate.mategroup.web.id)
+- **PWA Support:** Aplikasi dapat di-*install* di perangkat pengguna dan tetap dapat diakses bahkan saat offline sebagian.
 
 ### 🗄️ Database
 - **MongoDB Atlas:** Menyimpan data pengguna, proyek, dan embedding.  

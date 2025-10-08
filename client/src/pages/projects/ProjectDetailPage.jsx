@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
-import { Briefcase, User, CheckSquare, Clock, AlertCircle } from 'lucide-react';
+import { Briefcase, User, CheckSquare, Clock, AlertCircle, ArrowLeft } from 'lucide-react';
 
 const ProjectDetailPage = () => {
     const { id } = useParams();
@@ -56,6 +56,21 @@ const ProjectDetailPage = () => {
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="bg-white p-8 rounded-lg shadow-md">
+                <div className="flex items-center mb-6">
+                    <button
+                        onClick={() => {
+                            if (window.history.length > 1) {
+                                navigate(-1);
+                            } else {
+                                navigate('/');
+                            }
+                        }}
+                        className="flex items-center text-sm text-indigo-600 border border-indigo-600 rounded-lg px-3 py-2 hover:bg-indigo-600 hover:text-white transition-all"
+                    >
+                        <ArrowLeft className="w-5 h-5 mr-2" />
+                        Kembali
+                    </button>
+                </div>
                 <span className="text-sm font-semibold text-indigo-600 uppercase">Proyek Terbuka</span>
                 <h1 className="text-4xl font-bold text-gray-900 mt-2">{project.title}</h1>
                 <div className="mt-4 text-gray-600 space-y-3">

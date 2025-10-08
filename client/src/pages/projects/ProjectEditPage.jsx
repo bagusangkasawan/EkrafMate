@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
-import { Save, Wand2 } from 'lucide-react';
+import { Save, Wand2, ArrowLeft } from 'lucide-react';
 
 const ProjectEditPage = () => {
     const { id: projectId } = useParams();
@@ -71,7 +71,22 @@ const ProjectEditPage = () => {
 
     return (
         <div className="container mx-auto max-w-2xl px-4 py-12">
-            <h1 className="text-3xl font-bold text-gray-800 mb-8">Edit Proyek</h1>
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-bold text-gray-800">Edit Proyek</h1>
+                <button
+                    onClick={() => {
+                        if (window.history.length > 1) {
+                            navigate(-1);
+                        } else {
+                            navigate('/');
+                        }
+                    }}
+                    className="flex items-center text-sm text-indigo-600 border border-indigo-600 rounded-lg px-3 py-2 hover:bg-indigo-600 hover:text-white transition-all"
+                >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Kembali
+                </button>
+            </div>
             <div className="bg-white p-8 rounded-lg shadow-md">
                 <form onSubmit={handleUpdate} className="space-y-4">
                     <div>

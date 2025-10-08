@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
-import { Plus, Check, Wand2, Edit, Users, Trash2, Briefcase, Clock, DollarSign } from 'lucide-react';
+import { Plus, Check, Wand2, Edit, Users, Trash2, Briefcase, Clock, DollarSign, Save } from 'lucide-react';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import VerificationNotice from '../../components/layout/VerificationNotice';
 import { useDispatch } from 'react-redux';
@@ -204,7 +204,7 @@ const ClientDashboardPage = () => {
                                         )}
                                         
                                         {p.status === 'open' && p.applicants && p.applicants.length > 0 && (
-                                            <button onClick={() => setApplicantsModal({ isOpen: true, applicants: p.applicants, projectId: p._id })} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center text-sm">
+                                            <button onClick={() => setApplicantsModal({ isOpen: true, applicants: p.applicants, projectId: p._id })} className="bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-1 rounded-full flex items-center text-sm">
                                                 <Users className="w-4 h-4 mr-1" /> Lihat Pelamar ({p.applicants.length})
                                             </button>
                                         )}
@@ -252,8 +252,20 @@ const ClientDashboardPage = () => {
                                 />
                             </div>
                             <div className="flex justify-end gap-4 mt-4">
-                                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 bg-gray-200 rounded-lg">Batal</button>
-                                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg"><Check className="w-4 h-4 mr-2 inline" /> Simpan</button>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setShowModal(false)} 
+                                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition"
+                                >
+                                    <Save className="w-4 h-4" />
+                                    Simpan
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -279,7 +291,7 @@ const ClientDashboardPage = () => {
                             )) : <p>Belum ada pelamar.</p>}
                         </div>
                         <div className="flex justify-end mt-6">
-                            <button type="button" onClick={() => setApplicantsModal({ isOpen: false, applicants: [], projectId: null })} className="px-4 py-2 bg-gray-200 rounded-lg">Tutup</button>
+                            <button type="button" onClick={() => setApplicantsModal({ isOpen: false, applicants: [], projectId: null })} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">Tutup</button>
                         </div>
                     </div>
                 </div>
