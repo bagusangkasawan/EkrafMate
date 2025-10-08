@@ -139,7 +139,7 @@ const ProjectListPage = () => {
 						)}
 
 						{/* Deskripsi */}
-						<p className="text-sm text-gray-500 mt-3 line-clamp-3 flex-grow">
+						<p className="text-sm text-gray-500 text-justify mt-3 line-clamp-3 flex-grow">
 							{project.description}
 						</p>
 

@@ -38,7 +38,7 @@ const PublicProfilePage = () => {
                             <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Deskripsi</h3>
                             <div className="mt-2 text-gray-600 space-y-2">
                                 {user.description?.split("\n").map((line, i) => (
-                                    <p key={i}>{line}</p>
+                                    <p key={i} className='text-justify'>{line}</p>
                                 ))}
                             </div>
                         </div>

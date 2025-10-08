@@ -60,7 +60,7 @@ const ProjectDetailPage = () => {
                 <h1 className="text-4xl font-bold text-gray-900 mt-2">{project.title}</h1>
                 <div className="mt-4 text-gray-600 space-y-3">
                     {project.description?.split("\n").map((line, i) => (
-                        <p key={i}>{line}</p>
+                        <p key={i} className='text-justify'>{line}</p>
                     ))}
                 </div>
                 

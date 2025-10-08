@@ -22,7 +22,7 @@ projectRouter.route('/')
     .post(protect, isClient, createProject);
 
 projectRouter.route('/myprojects').get(protect, isClient, getMyProjects);
-projectRouter.route('/generate-description').post(protect, isClient, generateProjectDescription);
+projectRouter.route('/generate-description').post(protect, isAdminOrClient, generateProjectDescription);
 projectRouter.route('/assigned').get(protect, isCreative, getAssignedProjects);
 
 projectRouter.route('/:id')

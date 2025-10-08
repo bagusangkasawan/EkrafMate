@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const SearchPage = () => {
     const [query, setQuery] = useState('');
@@ -9,6 +9,7 @@ const SearchPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [searched, setSearched] = useState(false);
+    const navigate = useNavigate();
 
     const handleSearch = async (e) => {
         e.preventDefault();
@@ -53,18 +54,35 @@ const SearchPage = () => {
                 {searched && !loading && results.length === 0 && <p className="text-center text-gray-500">Tidak ada hasil yang ditemukan. Coba gunakan deskripsi yang berbeda.</p>}
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {results.map((user) => (
-                        <div key={user._id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                        <div
+                            key={user._id}
+                            onClick={() => navigate(`/profile/${user._id}`)} // gunakan useNavigate dari react-router-dom
+                            className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+                        >
                             <h3 className="text-xl font-bold text-gray-900">{user.name}</h3>
                             <p className="text-indigo-600 font-semibold mt-1">{user.headline || 'Pelaku Kreatif'}</p>
-                            <p className="text-gray-600 mt-4 text-sm line-clamp-3">{user.description || 'Tidak ada deskripsi.'}</p>
+                            <p className="text-gray-600 mt-4 text-sm text-justify line-clamp-3">{user.description || 'Tidak ada deskripsi.'}</p>
+                            
                             <div className="mt-4 flex flex-wrap gap-2">
                                 {user.skills?.slice(0, 5).map(skill => (
-                                    <span key={skill} className="bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">{skill}</span>
+                                <span
+                                    key={skill}
+                                    className="bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
+                                >
+                                    {skill}
+                                </span>
                                 ))}
                             </div>
+
                             <div className="mt-6 flex justify-between items-center">
                                 <p className="text-xs text-gray-400">Skor: {user.score.toFixed(2)}</p>
-                                <Link to={`/profile/${user._id}`} className="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Lihat Profil</Link>
+                                <Link
+                                to={`/profile/${user._id}`}
+                                className="text-sm font-semibold text-indigo-600 hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                                >
+                                Lihat Profil
+                                </Link>
                             </div>
                         </div>
                     ))}
