@@ -8,7 +8,7 @@ import {
     deleteProject,
     resetUserPasswordByAdmin
 } from '../controllers/adminController.js';
-import { protect, isAdmin } from '../middleware/authMiddleware.js';
+import { protect, isAdmin } from '../middlewares/authMiddleware.js';
 
 const adminRouter = express.Router();
 

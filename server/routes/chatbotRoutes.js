@@ -1,6 +1,6 @@
 import express from 'express';
 import { getChatResponse } from '../controllers/chatbotController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect } from '../middlewares/authMiddleware.js';
 
 const chatbotRouter = express.Router();
 

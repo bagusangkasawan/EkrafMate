@@ -1,6 +1,6 @@
 import User from '../models/User.js';
 import Project from '../models/Project.js';
-import { generateEmbedding as ge } from '../services/bedrockService.js';
+import { generateEmbedding as ge } from '../services/geminiService.js';
 import asyncHandler from 'express-async-handler';
 
 // @desc    Search creatives (users) using semantic search
@@ -39,6 +39,7 @@ export const searchCreatives = asyncHandler(async (req, res) => {
 
         res.json(results);
     } catch (error) {
+        console.error('Semantic search users error:', error);
         res.status(500);
         throw new Error('Failed to perform semantic search on users.');
     }
@@ -82,6 +83,7 @@ export const searchProjects = asyncHandler(async (req, res) => {
 
         res.json(results);
     } catch (error) {
+        console.error('Semantic search projects error:', error);
         res.status(500);
         throw new Error('Failed to perform semantic search on projects.');
     }

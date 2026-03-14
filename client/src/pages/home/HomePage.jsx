@@ -1,224 +1,443 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Briefcase, Users, Zap, Check, Star } from 'lucide-react';
+import { motion, useInView } from 'framer-motion';
+import {
+  Sparkles,
+  Search,
+  BrainCircuit,
+  Handshake,
+  Rocket,
+  ArrowRight,
+  Star,
+  Users,
+  Briefcase,
+  Zap,
+  Shield,
+  BarChart3,
+  CheckCircle2,
+  MessageSquare,
+  TrendingUp,
+  Globe,
+} from 'lucide-react';
 
+/* ──────────── Animation Helpers ──────────── */
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, delay: i * 0.1, ease: 'easeOut' },
+  }),
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12 } },
+};
+
+const AnimatedSection = ({ children, className = '' }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-80px' });
+  return (
+    <motion.div
+      ref={ref}
+      initial="hidden"
+      animate={isInView ? 'visible' : 'hidden'}
+      variants={staggerContainer}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+/* ──────────── Stats Counter ──────────── */
+const StatItem = ({ icon: Icon, value, label, color }) => (
+  <motion.div variants={fadeUp} className="text-center">
+    <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-${color}-100 mb-3`}>
+      <Icon className={`w-6 h-6 text-${color}-600`} />
+    </div>
+    <div className="text-3xl font-extrabold text-gray-900">{value}</div>
+    <div className="text-sm text-gray-500 mt-1">{label}</div>
+  </motion.div>
+);
+
+/* ──────────── Feature Card ──────────── */
+const FeatureCard = ({ icon: Icon, title, desc, gradient }) => (
+  <motion.div
+    variants={fadeUp}
+    className="group relative bg-white rounded-2xl p-6 border border-gray-100 hover-card"
+  >
+    <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} mb-4 shadow-lg`}>
+      <Icon className="w-6 h-6 text-white" />
+    </div>
+    <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+    <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
+  </motion.div>
+);
+
+/* ──────────── Step Card ──────────── */
+const StepCard = ({ number, icon: Icon, title, desc }) => (
+  <motion.div variants={fadeUp} className="relative text-center group">
+    <div className="relative mx-auto w-16 h-16 mb-5">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary-500 to-purple-500 rounded-2xl rotate-6 opacity-20 group-hover:rotate-12 transition-transform" />
+      <div className="relative w-full h-full bg-gradient-to-br from-primary-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
+        <Icon className="w-7 h-7 text-white" />
+      </div>
+      <span className="absolute -top-2 -right-2 w-6 h-6 bg-white border-2 border-primary-500 rounded-full flex items-center justify-center text-xs font-bold text-primary-600 shadow">
+        {number}
+      </span>
+    </div>
+    <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+    <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">{desc}</p>
+  </motion.div>
+);
+
+/* ──────────── Testimonial Card ──────────── */
+const TestimonialCard = ({ name, role, text }) => (
+  <motion.div
+    variants={fadeUp}
+    className="bg-white rounded-2xl p-6 border border-gray-100 hover-card"
+  >
+    <div className="flex gap-1 mb-4">
+      {[...Array(5)].map((_, i) => (
+        <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+      ))}
+    </div>
+    <p className="text-gray-600 text-sm leading-relaxed mb-5 italic">"{text}"</p>
+    <div className="flex items-center gap-3">
+      <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-purple-400 rounded-full flex items-center justify-center">
+        <span className="text-white text-sm font-bold">{name.charAt(0)}</span>
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-gray-900">{name}</p>
+        <p className="text-xs text-gray-500">{role}</p>
+      </div>
+    </div>
+  </motion.div>
+);
+
+/* ══════════════════════════════════════════════ */
+/*                  HOME PAGE                     */
+/* ══════════════════════════════════════════════ */
 const HomePage = () => {
-	return (
-		<div className="bg-white">
-			{/* Hero */}
-			<div className="container mx-auto px-6 py-16 text-center bg-white">
-				<h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 leading-tight">
-					Temukan <span className="text-indigo-600">Peluang</span>, Wujudkan <span className="text-indigo-600">Karya</span>.
-				</h1>
-				<p className="mt-6 max-w-2xl mx-auto text-lg text-gray-600">
-					EkrafMate adalah jembatan antara talenta kreatif paling berbakat di Indonesia dengan proyek-proyek inovatif yang menunggu untuk direalisasikan.
-				</p>
-				<div className="mt-8 flex justify-center gap-4">
-					<Link
-						to="/search"
-						className="bg-indigo-600 text-white px-8 py-3 rounded-md text-lg font-semibold hover:bg-indigo-700 shadow-lg transform hover:scale-105 transition-transform duration-300"
-					>
-						Cari Talenta
-					</Link>
-					<Link
-						to="/projects"
-						className="bg-white text-indigo-600 px-8 py-3 rounded-md text-lg font-semibold border-2 border-indigo-600 hover:text-white hover:bg-indigo-600 transform hover:scale-105 transition-transform duration-300"
-					>
-						Lihat Proyek
-					</Link>
-				</div>
-			</div>
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
-			{/* Why Choose */}
-			<div className="py-24 bg-slate-50">
-				<div className="container mx-auto px-6">
-					<h2 className="text-3xl font-bold text-center text-gray-800">Kenapa Memilih EkrafMate?</h2>
-					<div className="mt-12 grid md:grid-cols-3 gap-12">
-						<div className="text-center p-6 bg-white rounded-lg shadow-md hover:shadow-xl hover:scale-105 transition">
-							<div className="flex justify-center items-center mx-auto w-16 h-16 bg-indigo-100 rounded-full">
-								<Zap className="w-8 h-8 text-indigo-600" />
-							</div>
-							<h3 className="mt-6 text-xl font-semibold text-gray-800">Pencocokan Cerdas</h3>
-							<p className="mt-2 text-gray-600">
-								Teknologi AI kami memahami kebutuhan Anda, mencocokkan proyek dengan talenta yang paling relevan.
-							</p>
-						</div>
-						<div className="text-center p-6 bg-white rounded-lg shadow-md hover:shadow-xl hover:scale-105 transition">
-							<div className="flex justify-center items-center mx-auto w-16 h-16 bg-indigo-100 rounded-full">
-								<Briefcase className="w-8 h-8 text-indigo-600" />
-							</div>
-							<h3 className="mt-6 text-xl font-semibold text-gray-800">Proyek Berkualitas</h3>
-							<p className="mt-2 text-gray-600">
-								Temukan beragam proyek dari startup hingga korporasi besar yang terverifikasi dan siap dikerjakan.
-							</p>
-						</div>
-						<div className="text-center p-6 bg-white rounded-lg shadow-md hover:shadow-xl hover:scale-105 transition">
-							<div className="flex justify-center items-center mx-auto w-16 h-16 bg-indigo-100 rounded-full">
-								<Users className="w-8 h-8 text-indigo-600" />
-							</div>
-							<h3 className="mt-6 text-xl font-semibold text-gray-800">Komunitas Terkurasi</h3>
-							<p className="mt-2 text-gray-600">
-								Bergabunglah dengan jaringan profesional kreatif yang saling mendukung dan bertumbuh bersama.
-							</p>
-						</div>
-					</div>
-				</div>
-			</div>
+  return (
+    <div className="overflow-hidden">
+      {/* ─────── HERO ─────── */}
+      <section className="relative min-h-[92vh] flex items-center mesh-gradient dot-pattern">
+        {/* Floating blobs */}
+        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob" />
+        <div className="absolute top-40 right-10 w-72 h-72 bg-primary-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000" />
+        <div className="absolute -bottom-8 left-1/3 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000" />
 
-			{/* How It Works */}
-			<section className="py-20 bg-white">
-				<div className="max-w-6xl mx-auto px-6">
-					<h2 className="text-3xl font-bold text-center text-slate-800">Bagaimana EkrafMate Bekerja?</h2>
-					<div className="mt-12 grid md:grid-cols-3 gap-12">
-						<div className="text-center">
-							<div className="mx-auto w-16 h-16 bg-indigo-100 flex items-center justify-center rounded-full">
-								<span className="text-2xl font-bold text-indigo-600">1</span>
-							</div>
-							<h3 className="mt-6 text-xl font-semibold">Buat Akun</h3>
-							<p className="text-gray-600 mt-2">Daftar sebagai Kreator atau Klien dalam hitungan menit.</p>
-						</div>
-						<div className="text-center">
-							<div className="mx-auto w-16 h-16 bg-indigo-100 flex items-center justify-center rounded-full">
-								<span className="text-2xl font-bold text-indigo-600">2</span>
-							</div>
-							<h3 className="mt-6 text-xl font-semibold">Temukan Pasangan Tepat</h3>
-							<p className="text-gray-600 mt-2">AI kami membantu mencocokkan proyek dengan talenta terbaik.</p>
-						</div>
-						<div className="text-center">
-							<div className="mx-auto w-16 h-16 bg-indigo-100 flex items-center justify-center rounded-full">
-								<span className="text-2xl font-bold text-indigo-600">3</span>
-							</div>
-							<h3 className="mt-6 text-xl font-semibold">Kolaborasi & Sukses</h3>
-							<p className="text-gray-600 mt-2">Bekerja sama, selesaikan proyek, dan wujudkan karya hebat.</p>
-						</div>
-					</div>
-				</div>
-			</section>
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-20">
+          <div className="max-w-4xl mx-auto text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-primary-200 shadow-sm mb-8"
+            >
+              <Sparkles className="w-4 h-4 text-primary-600" />
+              <span className="text-sm font-semibold text-primary-700">Platform Job Matching Berbasis AI</span>
+            </motion.div>
 
-			{/* Testimonials */}
-			<section className="py-20 bg-slate-50">
-				<div className="max-w-6xl mx-auto px-6">
-					<h2 className="text-3xl font-bold text-center text-slate-800">Apa Kata Mereka?</h2>
-					<div className="mt-12 grid md:grid-cols-3 gap-8">
-						<div className="bg-white p-6 rounded-2xl shadow hover:shadow-xl transition">
-							<p className="text-gray-600 italic text-justify">
-								“Lewat EkrafMate saya bisa menemukan videografer lokal untuk proyek produk UMKM kami di Bandung. Hasilnya cepat, biayanya juga sesuai.”
-							</p>
-							<h4 className="mt-4 font-semibold text-gray-800">— Dwi, Pemilik Usaha Kuliner</h4>
-						</div>
-						<div className="bg-white p-6 rounded-2xl shadow hover:shadow-xl transition">
-							<p className="text-gray-600 italic text-justify">
-								“Sebagai ilustrator freelance, saya akhirnya bisa dapat project rutin dari brand dalam negeri. Fiturnya mudah dipakai dan banyak klien serius.”
-							</p>
-							<h4 className="mt-4 font-semibold text-gray-800">— Rani, Ilustrator Digital</h4>
-						</div>
-						<div className="bg-white p-6 rounded-2xl shadow hover:shadow-xl transition">
-							<p className="text-gray-600 italic text-justify">
-								“Platformnya sangat memudahkan kami mencari desainer kemasan lokal tanpa ribet. Komunikasi dan proses pembayarannya juga aman.”
-							</p>
-							<h4 className="mt-4 font-semibold text-gray-800">— Fajar, Brand Manager Kopi Nusantara</h4>
-						</div>
-					</div>
-				</div>
-			</section>
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-4xl sm:text-5xl lg:text-7xl font-extrabold text-gray-900 leading-tight"
+            >
+              Temukan{' '}
+              <span className="gradient-text">Peluang</span>
+              ,<br />
+              Wujudkan{' '}
+              <span className="gradient-text">Karya</span>
+            </motion.h1>
 
-			{/* Pricing Section */}
-			<section className="py-16 bg-white" id="pricing">
-				<div className="max-w-6xl mx-auto px-4">
-					<h2 className="text-3xl font-bold text-center text-slate-800 mb-4">
-						Pilih Paket Sesuai Kebutuhan Anda
-					</h2>
-					<p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
-						Mulai gratis dengan semua fitur dasar, atau upgrade ke Premium untuk pengalaman eksklusif dan profesional.
-					</p>
-					<div className="grid md:grid-cols-2 gap-8">
-						
-						{/* Free Plan */}
-						<div className="bg-slate-50 rounded-2xl shadow-lg p-8 flex flex-col hover:shadow-xl hover:scale-105 transition transform hover:-translate-y-1 relative">
-							<span className="absolute top-0 right-0 bg-indigo-600 text-white text-sm font-bold px-3 py-1 rounded-tr-2xl rounded-bl-xl">
-								Best for Starters
-							</span>
-							<h3 className="text-2xl font-semibold text-indigo-600 mb-4">Gratis</h3>
-							<p className="text-slate-600 mb-6">Semua fitur dasar untuk memulai perjalanan Anda.</p>
-							<ul className="space-y-3 flex-grow">
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Registrasi akun (Creative atau Client)</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Login & autentikasi dasar</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Pencarian kreator & proyek (semantic search)</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Dashboard kreator & klien</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Posting & edit proyek</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Aplikasi ke proyek & manajemen kandidat</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Chatbot interaktif (basic)</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Profil publik & pengaturan profil</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Verifikasi email dasar</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Notifikasi dasar (toast)</li>
-							</ul>
-							<div className="mt-6">
-								<Link
-									to="/dashboard"
-									className="block w-full bg-indigo-600 text-white py-3 rounded-xl text-center hover:bg-indigo-700 hover:scale-105 transition"
-								>
-									Mulai Gratis
-								</Link>
-							</div>
-						</div>
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="mt-6 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed"
+            >
+              EkrafMate adalah jembatan antara talenta kreatif di Indonesia dengan proyek-proyek inovatif yang menunggu untuk direalisasikan.
+            </motion.p>
 
-						{/* Premium Plan */}
-						<div className="bg-slate-50 rounded-2xl shadow-lg p-8 flex flex-col border-2 border-indigo-600 relative hover:shadow-xl hover:scale-105 transition transform hover:-translate-y-1">
-							<span className="absolute top-0 right-0 bg-yellow-400 text-slate-800 text-sm font-bold px-3 py-1 rounded-tr-2xl rounded-bl-xl">
-								Coming Soon
-							</span>
-							<h3 className="text-2xl font-semibold text-indigo-600 mb-4 flex items-center gap-2">
-								Premium <Star className="text-yellow-500 w-5 h-5"/>
-							</h3>
-							<p className="text-slate-600 mb-6">Fitur eksklusif dan berkelas untuk profesional.</p>
-							<ul className="space-y-3 flex-grow">
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> AI-Powered Smart Matching</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Advanced Analytics Dashboard</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Priority Project Placement</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Unlimited Applications</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Private Messaging & Collaboration Tools</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Custom Branding untuk profil/proyek</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Secure Cross-Border Payment</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> AI Resume & Portfolio Builder</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Team Management untuk klien</li>
-								<li className="flex items-center gap-2"><Check className="text-green-600 w-5 h-5"/> Early Access to New Features</li>
-							</ul>
-							<div className="mt-6">
-								<button className="w-full bg-gray-400 text-white py-3 rounded-xl cursor-not-allowed">
-									Segera Hadir
-								</button>
-							</div>
-						</div>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="mt-10 flex flex-col sm:flex-row gap-4 justify-center"
+            >
+              <Link
+                to="/register"
+                className="group inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-primary-600 to-purple-600 rounded-2xl hover:shadow-xl hover:shadow-primary-500/25 hover:-translate-y-0.5 transition-all duration-300"
+              >
+                Mulai Gratis
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link
+                to="/projects"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-gray-700 bg-white border border-gray-200 rounded-2xl hover:border-primary-300 hover:text-primary-600 hover:shadow-lg transition-all duration-300"
+              >
+                <Briefcase className="w-4 h-4" />
+                Jelajahi Proyek
+              </Link>
+            </motion.div>
 
-					</div>
-				</div>
-			</section>
+            {/* Trust badges */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="mt-14 flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400"
+            >
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> Gratis untuk memulai</span>
+              <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-blue-500" /> Aman & Terverifikasi</span>
+              <span className="flex items-center gap-1.5"><Zap className="w-4 h-4 text-yellow-500" /> AI-Powered Matching</span>
+            </motion.div>
+          </div>
+        </div>
+      </section>
 
-			{/* CTA Section */}
-			<section className="py-20 bg-indigo-600 text-white text-center">
-				<div className="max-w-3xl mx-auto px-6">
-					<h2 className="text-4xl font-bold">Siap Mulai Perjalanan Kreatif Anda?</h2>
-					<p className="mt-4 text-lg text-indigo-100">
-						Bergabunglah dengan ribuan kreator & klien yang sudah menemukan partner terbaik mereka di EkrafMate.
-					</p>
-					<div className="mt-8 flex justify-center gap-4">
-						<Link
-							to="/register"
-							className="bg-white text-indigo-600 px-8 py-3 rounded-md text-lg font-semibold hover:bg-gray-100 shadow-lg transform hover:scale-105 transition"
-						>
-							Daftar Sekarang
-						</Link>
-						<Link
-							to="/search"
-							className="bg-transparent border-2 border-white px-8 py-3 rounded-md text-lg font-semibold hover:bg-white hover:text-indigo-600  hover:scale-105 transition"
-						>
-							Temukan Talenta
-						</Link>
-					</div>
-				</div>
-			</section>
-		</div>
-	);
+      {/* ─────── STATS ─────── */}
+      <section className="relative -mt-12 z-10 container mx-auto px-4 sm:px-6 lg:px-8">
+        <AnimatedSection className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 sm:p-10 grid grid-cols-2 md:grid-cols-4 gap-8">
+          <StatItem icon={Users} value="500+" label="Talenta Kreatif" color="primary" />
+          <StatItem icon={Briefcase} value="200+" label="Proyek Terdaftar" color="purple" />
+          <StatItem icon={Handshake} value="150+" label="Proyek Selesai" color="green" />
+          <StatItem icon={Star} value="4.9" label="Rating Kepuasan" color="yellow" />
+        </AnimatedSection>
+      </section>
+
+      {/* ─────── FEATURES ─────── */}
+      <section className="py-24 bg-gray-50/50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimatedSection className="text-center mb-16">
+            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-xs font-semibold uppercase tracking-wider mb-4">
+              <Zap className="w-3.5 h-3.5" /> Fitur Unggulan
+            </motion.div>
+            <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+              Mengapa Memilih <span className="gradient-text">EkrafMate</span>?
+            </motion.h2>
+            <motion.p variants={fadeUp} className="mt-4 text-gray-500 max-w-2xl mx-auto">
+              Platform cerdas yang memahami kebutuhan proyek dan keahlian talenta secara mendalam
+            </motion.p>
+          </AnimatedSection>
+
+          <AnimatedSection className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <FeatureCard
+              icon={BrainCircuit}
+              title="AI Semantic Search"
+              desc="Temukan talenta dengan pencarian AI yang memahami konteks, bukan sekadar kata kunci."
+              gradient="from-primary-500 to-blue-500"
+            />
+            <FeatureCard
+              icon={Sparkles}
+              title="Deskripsi AI-Generated"
+              desc="Buat deskripsi proyek profesional secara otomatis dengan dukungan model AI generatif terkini."
+              gradient="from-purple-500 to-pink-500"
+            />
+            <FeatureCard
+              icon={MessageSquare}
+              title="AI Chatbot Assistant"
+              desc="Chatbot MateBot siap membantu navigasi platform, tips karir, dan panduan pencarian proyek."
+              gradient="from-green-500 to-emerald-500"
+            />
+            <FeatureCard
+              icon={Shield}
+              title="Verifikasi Akun"
+              desc="Sistem verifikasi email memastikan kredibilitas setiap pengguna di platform."
+              gradient="from-orange-500 to-red-500"
+            />
+            <FeatureCard
+              icon={BarChart3}
+              title="Dashboard Interaktif"
+              desc="Pantau proyek, kelola lamaran, dan lacak pendapatan melalui dashboard yang intuitif."
+              gradient="from-cyan-500 to-blue-500"
+            />
+            <FeatureCard
+              icon={TrendingUp}
+              title="Smart Job Matching"
+              desc="Algoritma cerdas mencocokan proyek dengan talenta berdasarkan keahlian dan pengalaman."
+              gradient="from-violet-500 to-purple-500"
+            />
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ─────── HOW IT WORKS ─────── */}
+      <section className="py-24">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimatedSection className="text-center mb-16">
+            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-xs font-semibold uppercase tracking-wider mb-4">
+              <Rocket className="w-3.5 h-3.5" /> Cara Kerja
+            </motion.div>
+            <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+              Mulai dalam <span className="gradient-text">3 Langkah</span> Mudah
+            </motion.h2>
+            <motion.p variants={fadeUp} className="mt-4 text-gray-500 max-w-2xl mx-auto">
+              Dari registrasi hingga mendapatkan proyek atau talenta impianmu
+            </motion.p>
+          </AnimatedSection>
+
+          <AnimatedSection className="grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-16">
+            <StepCard
+              number="1"
+              icon={Users}
+              title="Buat Profil"
+              desc="Daftar akun, pilih peranmu sebagai Creative atau Client, dan lengkapi profil dengan keahlianmu."
+            />
+            <StepCard
+              number="2"
+              icon={Search}
+              title="Temukan & Cocokkan"
+              desc="Gunakan AI search untuk menemukan talenta atau proyek yang paling sesuai secara semantik."
+            />
+            <StepCard
+              number="3"
+              icon={Handshake}
+              title="Berkolaborasi"
+              desc="Mulai berkolaborasi, kelola proyek, dan bangun portofolio kreatifmu bersama."
+            />
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ─────── ROLE SPLIT ─────── */}
+      <section className="py-24 bg-gray-50/50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimatedSection className="text-center mb-16">
+            <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+              Untuk Siapa <span className="gradient-text">EkrafMate</span>?
+            </motion.h2>
+          </AnimatedSection>
+
+          <AnimatedSection className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Creative */}
+            <motion.div variants={fadeUp} className="relative bg-white rounded-3xl p-8 border border-gray-100 hover-card overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-100 to-primary-50 rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity" />
+              <div className="relative">
+                <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-blue-500 rounded-2xl flex items-center justify-center mb-5 shadow-lg shadow-primary-500/20">
+                  <Sparkles className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">Untuk Creative</h3>
+                <ul className="space-y-3 text-gray-600 text-sm">
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /> Bangun portofolio profesional secara online</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /> Ditemukan oleh klien melalui AI search</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /> Lamar proyek yang sesuai keahlianmu</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /> AI membantu buat deskripsi profil menarik</li>
+                </ul>
+                <Link to="/register" className="inline-flex items-center gap-2 mt-6 text-sm font-semibold text-primary-600 hover:text-primary-700 group/link">
+                  Daftar sebagai Creative <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Client */}
+            <motion.div variants={fadeUp} className="relative bg-white rounded-3xl p-8 border border-gray-100 hover-card overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100 to-purple-50 rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity" />
+              <div className="relative">
+                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-5 shadow-lg shadow-purple-500/20">
+                  <Globe className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">Untuk Client</h3>
+                <ul className="space-y-3 text-gray-600 text-sm">
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /> Posting proyek dan terima lamaran talenta terbaik</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /> Cari creative berdasarkan kebutuhan spesifik</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /> AI bantu buat deskripsi proyek profesional</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /> Kelola semua proyek dari satu dashboard</li>
+                </ul>
+                <Link to="/register" className="inline-flex items-center gap-2 mt-6 text-sm font-semibold text-purple-600 hover:text-purple-700 group/link">
+                  Daftar sebagai Client <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </motion.div>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ─────── TESTIMONIALS ─────── */}
+      <section className="py-24">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimatedSection className="text-center mb-16">
+            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-3 py-1.5 bg-yellow-50 text-yellow-700 rounded-full text-xs font-semibold uppercase tracking-wider mb-4">
+              <Star className="w-3.5 h-3.5" /> Testimoni
+            </motion.div>
+            <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+              Dipercaya oleh <span className="gradient-text">Kreator Indonesia</span>
+            </motion.h2>
+          </AnimatedSection>
+
+          <AnimatedSection className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <TestimonialCard
+              name="Andi Pratama"
+              role="UI/UX Designer"
+              text="EkrafMate membantu saya menemukan proyek yang benar-benar cocok dengan keahlian saya. AI search-nya luar biasa akurat!"
+            />
+            <TestimonialCard
+              name="Siti Rahayu"
+              role="Pemilik Bisnis"
+              text="Sebagai klien, saya bisa menemukan desainer berkualitas dengan cepat. Fitur AI untuk membuat deskripsi proyek sangat menghemat waktu."
+            />
+            <TestimonialCard
+              name="Budi Santoso"
+              role="Fullstack Developer"
+              text="Platform terbaik untuk freelancer kreatif di Indonesia. Dashboard-nya intuitif dan proses melamar proyek sangat mudah."
+            />
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ─────── CTA ─────── */}
+      <section className="py-24">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-600 via-purple-600 to-accent-600 p-12 sm:p-16 text-center"
+          >
+            {/* Decorative elements */}
+            <div className="absolute top-0 left-0 w-40 h-40 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute bottom-0 right-0 w-56 h-56 bg-white/10 rounded-full translate-x-1/4 translate-y-1/4" />
+            <div className="absolute top-1/2 left-1/4 w-20 h-20 bg-white/5 rounded-full" />
+
+            <div className="relative">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight">
+                Siap Memulai Perjalanan<br />Kreatifmu?
+              </h2>
+              <p className="mt-5 text-lg text-white/80 max-w-xl mx-auto">
+                Bergabunglah dengan ratusan talenta kreatif dan klien yang sudah merasakan kemudahan EkrafMate.
+              </p>
+              <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  to="/register"
+                  className="group inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-primary-700 bg-white rounded-2xl hover:bg-gray-50 hover:shadow-xl transition-all duration-300"
+                >
+                  Daftar Sekarang
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link
+                  to="/search"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white border-2 border-white/30 rounded-2xl hover:bg-white/10 transition-all duration-300"
+                >
+                  <Search className="w-4 h-4" />
+                  Cari Talenta
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+    </div>
+  );
 };
 
 export default HomePage;

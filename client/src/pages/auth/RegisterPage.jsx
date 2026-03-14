@@ -1,160 +1,255 @@
-import React, { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { useAuth } from '../../hooks/useAuth';
 import { register, clearAuthState } from '../../redux/slices/authSlice';
-import toast from 'react-hot-toast';
-import { CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Eye, EyeOff, Sparkles, UserPlus, CheckCircle2, Briefcase, Palette } from 'lucide-react';
 
 const RegisterPage = () => {
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState('creative');
+  const [showPassword, setShowPassword] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { userInfo } = useAuth();
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const turnstileRef = useRef(null);
+
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { userInfo, loading, error } = useAuth();
 
-  if (userInfo) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  useEffect(() => {
+    dispatch(clearAuthState());
+  }, [dispatch]);
 
-  const submitHandler = async (e) => {
+  useEffect(() => {
+    if (userInfo) navigate('/dashboard');
+  }, [userInfo, navigate]);
+
+  useEffect(() => {
+    if (turnstileRef.current && window.turnstile) {
+      const widgetId = window.turnstile.render(turnstileRef.current, {
+        sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
+        callback: (token) => setTurnstileToken(token),
+        'expired-callback': () => setTurnstileToken(''),
+        theme: 'light',
+      });
+      return () => {
+        if (widgetId) window.turnstile.remove(widgetId);
+      };
+    }
+  }, [success]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (password.length < 6) {
-      toast.error('Password minimal harus 6 karakter.');
-      return;
-    }
-    setLoading(true);
-    const resultAction = await dispatch(register({ name, username, email, password, role }));
-    if (register.fulfilled.match(resultAction)) {
+    if (!turnstileToken) return;
+    const result = await dispatch(register({ name, username, email, password, role, turnstileToken }));
+    if (result.meta.requestStatus === 'fulfilled') {
       setSuccess(true);
-      dispatch(clearAuthState());
-    } else {
-      toast.error(resultAction.payload || 'Gagal mendaftar. Username/Email mungkin sudah digunakan.');
-      dispatch(clearAuthState());
     }
-    setLoading(false);
   };
 
-  if (success) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-128px)] bg-slate-50 p-4">
-        <div className="max-w-md w-full text-center p-10 bg-white rounded-xl shadow-lg">
-          <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-          <h2 className="mt-6 text-2xl font-bold text-gray-900">Registrasi Berhasil!</h2>
-          <p className="mt-2 text-gray-600">
-            Kami telah mengirimkan link verifikasi ke email Anda. Silakan periksa inbox (dan folder spam) Anda untuk melanjutkan.
-          </p>
-          <Link
-            to="/login"
-            className="mt-8 inline-block bg-indigo-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-indigo-700"
-          >
-            Kembali ke Login
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex items-center justify-center py-12 px-4 bg-slate-50">
-      <div className="max-w-md w-full space-y-8 p-10 bg-white rounded-xl shadow-lg">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Buat Akun Baru</h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={submitHandler}>
-          <div className="rounded-md shadow-sm space-y-4">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="Nama Lengkap"
-            />
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="Username (tanpa spasi, _ atau angka)"
-            />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="Alamat Email"
-            />
+    <div className="min-h-[calc(100vh-64px)] flex">
+      {/* Left - Decorative Panel */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden mesh-gradient items-center justify-center p-12">
+        <div className="absolute top-20 right-20 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob" />
+        <div className="absolute bottom-20 left-20 w-72 h-72 bg-primary-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000" />
 
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Password (min. 6 karakter)"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500"
-              >
-                {showPassword ? <EyeOff /> : <Eye />}
-              </button>
-            </div>
-
-            <div>
-              <div className="mt-2 flex border border-gray-300 rounded-md p-1 bg-gray-50">
-                <button
-                  type="button"
-                  onClick={() => setRole('creative')}
-                  className={`w-1/2 py-2 rounded-md transition-colors ${
-                    role === 'creative'
-                      ? 'bg-indigo-600 text-white shadow'
-                      : 'text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  Pelaku Kreatif
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole('client')}
-                  className={`w-1/2 py-2 rounded-md transition-colors ${
-                    role === 'client'
-                      ? 'bg-indigo-600 text-white shadow'
-                      : 'text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  Pemberi Proyek
-                </button>
-              </div>
-            </div>
+        <motion.div
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="relative text-center max-w-md"
+        >
+          <div className="w-20 h-20 bg-gradient-to-br from-primary-600 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-primary-500/30">
+            <Sparkles className="w-10 h-10 text-white" />
           </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400"
-            >
-              {loading ? 'Mendaftar...' : 'Daftar'}
-            </button>
-          </div>
-        </form>
-        <div className="text-sm text-center">
-          <p>
-            Sudah punya akun?{' '}
-            <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Login sekarang
-            </Link>
+          <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Bergabung Sekarang!</h2>
+          <p className="text-gray-600 leading-relaxed">
+            Buat akun gratismu dan mulai menemukan peluang kreatif terbaik yang dicocokkan oleh kecerdasan buatan.
           </p>
-        </div>
+
+          <div className="mt-8 space-y-4 text-left">
+            {['AI-powered job matching', 'Gratis untuk memulai', 'Verifikasi akun terpercaya'].map((item) => (
+              <div key={item} className="flex items-center gap-3 text-sm text-gray-700">
+                <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Right - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-white">
+        <AnimatePresence mode="wait">
+          {success ? (
+            <motion.div
+              key="success"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center max-w-md"
+            >
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="w-10 h-10 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">Registrasi Berhasil!</h2>
+              <p className="text-gray-600 leading-relaxed">
+                Kami telah mengirimkan email verifikasi. Silakan cek inbox atau folder spam Anda untuk mengaktifkan akun.
+              </p>
+              <Link
+                to="/login"
+                className="inline-flex items-center justify-center gap-2 mt-8 px-8 py-3.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-purple-600 rounded-xl hover:shadow-lg transition-all"
+              >
+                Masuk ke Akun
+              </Link>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="w-full max-w-md"
+            >
+              <div className="lg:hidden flex items-center gap-2.5 mb-8">
+                <div className="w-9 h-9 bg-gradient-to-br from-primary-600 to-purple-600 rounded-xl flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-extrabold gradient-text">EkrafMate</span>
+              </div>
+
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">Buat Akun Baru</h1>
+              <p className="mt-2 text-gray-500">
+                Sudah punya akun?{' '}
+                <Link to="/login" className="font-semibold text-primary-600 hover:text-primary-700">
+                  Masuk di sini
+                </Link>
+              </p>
+
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700"
+                >
+                  {error}
+                </motion.div>
+              )}
+
+              <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+                {/* Role Toggle */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Daftar Sebagai</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setRole('creative')}
+                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border-2 transition-all duration-200 ${
+                        role === 'creative'
+                          ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-sm'
+                          : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      }`}
+                    >
+                      <Palette className="w-4 h-4" />
+                      Creative
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRole('client')}
+                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border-2 transition-all duration-200 ${
+                        role === 'client'
+                          ? 'border-purple-500 bg-purple-50 text-purple-700 shadow-sm'
+                          : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      }`}
+                    >
+                      <Briefcase className="w-4 h-4" />
+                      Client
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nama Lengkap</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    placeholder="Nama kamu"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Username</label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                    placeholder="username_unik"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="nama@email.com"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      placeholder="Min. 6 karakter"
+                      className="w-full px-4 py-3 pr-12 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div ref={turnstileRef} className="flex justify-center" />
+
+                <button
+                  type="submit"
+                  disabled={loading || !turnstileToken}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-purple-600 rounded-xl hover:shadow-lg hover:shadow-primary-500/25 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none transition-all duration-300"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4" />
+                      Buat Akun
+                    </>
+                  )}
+                </button>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

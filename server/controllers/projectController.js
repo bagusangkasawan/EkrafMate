@@ -1,6 +1,6 @@
 import Project from '../models/Project.js';
 import User from '../models/User.js';
-import { generateEmbedding as ge, generateDescription as gd } from '../services/bedrockService.js';
+import { generateEmbedding as ge, generateDescription as gd } from '../services/geminiService.js';
 import asyncHandler from 'express-async-handler';
 
 // @desc    Create a new project

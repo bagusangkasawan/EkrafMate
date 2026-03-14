@@ -13,7 +13,7 @@ import {
     generateProjectDescription,
     deleteMyProject
 } from '../controllers/projectController.js';
-import { protect, isClient, isCreative, isAdminOrClient } from '../middleware/authMiddleware.js';
+import { protect, isClient, isCreative, isAdminOrClient } from '../middlewares/authMiddleware.js';
 
 const projectRouter = express.Router();
 

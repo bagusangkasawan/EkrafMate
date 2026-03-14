@@ -1,177 +1,203 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Briefcase, Sparkles, Clock, DollarSign, Tag, Loader2, ArrowRight, FolderOpen } from 'lucide-react';
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.4, delay: i * 0.08 } }),
+};
+
+const statusConfig = {
+  open: { label: 'Terbuka', color: 'bg-green-50 text-green-700 border-green-200' },
+  in_progress: { label: 'Berlangsung', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  closed: { label: 'Selesai', color: 'bg-gray-50 text-gray-600 border-gray-200' },
+};
 
 const ProjectListPage = () => {
-	const navigate = useNavigate();
-	const [projects, setProjects] = useState([]);
-	const [loading, setLoading] = useState(false);
-	const [query, setQuery] = useState('');
-	const [error, setError] = useState(null);
-	const [searched, setSearched] = useState(false);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+  const [searchLoading, setSearchLoading] = useState(false);
 
-	// Fetch semua proyek (GET)
-	const fetchAllProjects = async () => {
-		setLoading(true);
-		setError(null);
-		try {
-			const { data } = await axios.get(
-				`${import.meta.env.VITE_API_URL}/api/projects`
-			);
-			setProjects(data);
-		} catch (err) {
-			console.error('Gagal memuat proyek', err);
-			setError('Gagal memuat proyek. Coba lagi nanti.');
-			setProjects([]);
-		} finally {
-			setLoading(false);
-		}
-	};
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/projects`);
+        setProjects(data);
+      } catch (error) {
+        console.error('Failed to fetch projects');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProjects();
+  }, []);
 
-	// Search proyek (POST)
-	const searchProjects = async () => {
-		if (!query.trim()) return fetchAllProjects();
-		setLoading(true);
-		setError(null);
-		try {
-			const { data } = await axios.post(
-				`${import.meta.env.VITE_API_URL}/api/search/projects`,
-				{ query }
-			);
-			setProjects(data);
-		} catch (err) {
-			console.error('Gagal mencari proyek', err);
-			setError('Gagal mencari proyek. Coba lagi nanti.');
-			setProjects([]);
-		} finally {
-			setLoading(false);
-			setSearched(true);
-		}
-	};
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!query.trim()) {
+      setSearchResults(null);
+      return;
+    }
+    setSearchLoading(true);
+    try {
+      const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/api/search/projects`, { query });
+      setSearchResults(data);
+    } catch (error) {
+      console.error('Search failed');
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
-	// Load proyek pertama kali
-	useEffect(() => {
-		fetchAllProjects();
-	}, []);
+  const displayProjects = searchResults ?? projects;
 
-	const handleSearch = (e) => {
-		e.preventDefault();
-		searchProjects();
-	};
+  const formatBudget = (num) => {
+    if (!num) return '-';
+    return 'Rp ' + Number(num).toLocaleString('id-ID');
+  };
 
-	return (
-		<div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-			{/* Header */}
-			<div className="text-center">
-				<h1 className="text-4xl font-bold text-gray-800">
-					Jelajahi Proyek Terbuka
-				</h1>
-				<p className="mt-2 text-gray-600">
-					Temukan kesempatan berikutnya untuk menunjukkan keahlian Anda.
-				</p>
-			</div>
+  return (
+    <div className="min-h-[calc(100vh-64px)]">
+      {/* Hero Search */}
+      <section className="relative bg-gradient-to-br from-purple-600 via-primary-600 to-blue-600 py-16 sm:py-20 overflow-hidden">
+        <div className="absolute inset-0 dot-pattern opacity-10" />
+        <div className="absolute top-10 right-10 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-10 left-10 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
 
-			{/* Search bar */}
-			<form
-				onSubmit={handleSearch}
-				className="mt-8 max-w-2xl mx-auto flex shadow-md rounded-lg"
-			>
-				<input
-					type="text"
-					value={query}
-					onChange={(e) => setQuery(e.target.value)}
-					className="w-full px-4 py-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-					placeholder="Contoh: proyek desain UI/UX aplikasi mobile"
-				/>
-				<button
-					type="submit"
-					disabled={loading || !query.trim()}
-					className="bg-indigo-600 text-white px-6 py-3 rounded-r-lg hover:bg-indigo-700 disabled:bg-indigo-400 flex items-center"
-				>
-					<Search className="w-5 h-5 md:mr-2" />
-					<span className="hidden md:inline">
-						{loading ? 'Mencari...' : 'Cari'}
-					</span>
-				</button>
-			</form>
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/15 backdrop-blur-sm rounded-full text-white/90 text-sm font-medium mb-6">
+              <Briefcase className="w-4 h-4" /> Jelajahi Proyek
+            </div>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-4">
+              Temukan Proyek <span className="text-yellow-300">Impianmu</span>
+            </h1>
+            <p className="text-white/70 max-w-xl mx-auto mb-8">
+              Cari proyek yang sesuai dengan keahlianmu menggunakan pencarian semantik AI.
+            </p>
+          </motion.div>
 
-			{/* Grid Projects */}
-			<div className="mt-12 grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-				{loading && (
-					<p className="col-span-full text-center text-indigo-600">
-						Memuat proyek...
-					</p>
-				)}
-				{error && (
-					<p className="col-span-full text-center text-red-500">{error}</p>
-				)}
-				{searched && !loading && projects.length === 0 && (
-					<p className="col-span-full text-center text-gray-500">
-						Tidak ada proyek ditemukan.
-					</p>
-				)}
+          <motion.form
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            onSubmit={handleSearch}
+            className="max-w-2xl mx-auto"
+          >
+            <div className="relative">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder='Contoh: "Proyek desain aplikasi mobile fintech"'
+                className="w-full pl-14 pr-36 py-5 bg-white rounded-2xl shadow-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-white/30 transition-all"
+              />
+              <button
+                type="submit"
+                disabled={searchLoading}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 px-6 py-2.5 bg-gradient-to-r from-purple-600 to-primary-600 text-white text-sm font-semibold rounded-xl hover:shadow-lg disabled:opacity-60 transition-all"
+              >
+                {searchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Cari'}
+              </button>
+            </div>
+          </motion.form>
+        </div>
+      </section>
 
-				{/* Card Project */}
-				{projects.map((project) => (
-					<div
-						key={project._id}
-						onClick={() => navigate(`/project/${project._id}`)}
-						className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col cursor-pointer"
-					>
-						{/* Judul */}
-						<h2 className="text-xl font-bold text-gray-900">
-							{project.title}
-						</h2>
+      {/* Project List */}
+      <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <AnimatePresence mode="wait">
+          {loading || searchLoading ? (
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-20">
+              <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mb-4" />
+              <p className="text-gray-500 text-sm">Memuat proyek...</p>
+            </motion.div>
+          ) : displayProjects.length === 0 ? (
+            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
+              <FolderOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-gray-700 mb-2">Belum Ada Proyek</h3>
+              <p className="text-gray-500 text-sm">Coba cari dengan kata kunci yang berbeda.</p>
+            </motion.div>
+          ) : (
+            <motion.div key="list" initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.08 } } }}>
+              <div className="flex items-center justify-between mb-6">
+                <p className="text-sm text-gray-500">
+                  <span className="font-semibold text-gray-700">{displayProjects.length}</span> proyek ditemukan
+                </p>
+                {searchResults && (
+                  <button onClick={() => { setSearchResults(null); setQuery(''); }} className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                    Reset pencarian
+                  </button>
+                )}
+              </div>
 
-						{/* Status */}
-						{project.status && (
-							<span
-								className={`inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full w-fit
-									${
-										project.status === 'open'
-											? 'bg-green-100 text-green-800'
-											: 'bg-gray-200 text-gray-700'
-									}`}
-							>
-								{project.status.toUpperCase()}
-							</span>
-						)}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {displayProjects.map((project) => {
+                  const status = statusConfig[project.status] || statusConfig.open;
+                  return (
+                    <motion.div key={project._id} variants={fadeUp}>
+                      <Link
+                        to={`/project/${project._id}`}
+                        className="block bg-white rounded-2xl border border-gray-100 p-6 hover-card group h-full"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border ${status.color}`}>
+                            <Clock className="w-3 h-3" /> {status.label}
+                          </span>
+                          {project.score != null && (
+                            <span className="text-xs font-semibold text-primary-600 bg-primary-50 px-2 py-1 rounded-lg">
+                              {(project.score * 100).toFixed(0)}% match
+                            </span>
+                          )}
+                        </div>
 
-						{/* Deskripsi */}
-						<p className="text-sm text-gray-500 text-justify mt-3 line-clamp-3 flex-grow">
-							{project.description}
-						</p>
+                        <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors line-clamp-2">
+                          {project.title}
+                        </h3>
 
-						{/* Budget */}
-						{project.budget && (
-							<p className="text-lg font-semibold text-green-600 mt-4 flex items-center">
-								{new Intl.NumberFormat('id-ID', {
-									style: 'currency',
-									currency: 'IDR',
-								}).format(project.budget)}
-							</p>
-						)}
+                        <p className="text-sm text-gray-500 line-clamp-3 mb-4">{project.description}</p>
 
-						{/* Footer */}
-						<div className="mt-6 pt-4 border-t flex items-center justify-between">
-							<Link
-								to={`/project/${project._id}`}
-								className="font-semibold text-indigo-600 hover:underline"
-							>
-								Lihat Detail
-							</Link>
-							{project.score !== undefined && (
-								<p className="text-xs text-gray-400">
-									Skor: {project.score.toFixed(2)}
-								</p>
-							)}
-						</div>
-					</div>
-				))}
-			</div>
-		</div>
-	);
+                        <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                          <span className="flex items-center gap-1.5">
+                            <DollarSign className="w-4 h-4 text-green-500" />
+                            <span className="font-medium text-gray-700">{formatBudget(project.budget)}</span>
+                          </span>
+                        </div>
+
+                        {project.requiredSkills?.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-4">
+                            {project.requiredSkills.slice(0, 3).map((skill) => (
+                              <span key={skill} className="px-2.5 py-1 bg-purple-50 text-purple-600 text-xs font-medium rounded-lg">
+                                {skill}
+                              </span>
+                            ))}
+                            {project.requiredSkills.length > 3 && (
+                              <span className="px-2.5 py-1 bg-gray-100 text-gray-400 text-xs font-medium rounded-lg">
+                                +{project.requiredSkills.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-1 text-sm font-semibold text-primary-600 pt-3 border-t border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity">
+                          Lihat Detail <ArrowRight className="w-4 h-4" />
+                        </div>
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
+    </div>
+  );
 };
 
 export default ProjectListPage;

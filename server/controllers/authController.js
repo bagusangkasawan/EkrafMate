@@ -29,7 +29,7 @@ export const registerUser = asyncHandler(async (req, res) => {
         const verificationToken = user.getVerificationToken();
         await user.save({ validateBeforeSave: false });
 
-        const verifyUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
+        const verifyUrl = `${process.env.EMAIL_VERIFICATION_URL}/${verificationToken}`;
         const message = `Terima kasih telah mendaftar di EkrafMate! Silakan klik link berikut untuk memverifikasi email Anda: \n\n${verifyUrl}`;
 
         try {
@@ -131,7 +131,7 @@ export const resendVerificationEmail = asyncHandler(async (req, res) => {
     const verificationToken = user.getVerificationToken();
     await user.save({ validateBeforeSave: false });
 
-    const verifyUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
+    const verifyUrl = `${process.env.EMAIL_VERIFICATION_URL}/${verificationToken}`;
     const message = `Berikut adalah link verifikasi baru untuk akun EkrafMate Anda: \n\n${verifyUrl}`;
     
     try {

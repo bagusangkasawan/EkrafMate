@@ -1,283 +1,302 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
-import toast from 'react-hot-toast';
-import VerificationNotice from '../../components/layout/VerificationNotice';
-import { Link } from 'react-router-dom';
-import { Wand2, Save, Maximize2, X, DollarSign, Briefcase, CheckCircle } from 'lucide-react';
 import { useDispatch } from 'react-redux';
-import { fetchUserProfile } from '../../redux/slices/authSlice';
+import { fetchUserProfile, updateUserInfo } from '../../redux/slices/authSlice';
+import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import VerificationNotice from '../../components/layout/VerificationNotice';
+import {
+  Briefcase, FolderOpen, DollarSign, Save, Wand2, Plus, X, Loader2,
+  Sparkles, Clock, CheckCircle2, Tag, ChevronDown, TrendingUp, Expand
+} from 'lucide-react';
+
+const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
+
+const StatCard = ({ icon: Icon, title, value, gradient }) => (
+  <motion.div variants={fadeUp} className="bg-white rounded-2xl border border-gray-100 p-6 hover-card">
+    <div className="flex items-center gap-4">
+      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg`}>
+        <Icon className="w-6 h-6 text-white" />
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">{title}</p>
+        <p className="text-2xl font-extrabold text-gray-900">{value}</p>
+      </div>
+    </div>
+  </motion.div>
+);
+
+const statusConfig = {
+  open: { label: 'Terbuka', color: 'bg-green-50 text-green-700' },
+  in_progress: { label: 'Berlangsung', color: 'bg-blue-50 text-blue-700' },
+  closed: { label: 'Selesai', color: 'bg-gray-100 text-gray-600' },
+};
 
 const CreativeDashboardPage = () => {
-    const { userInfo } = useAuth();
-    const [profile, setProfile] = useState({ name: '', headline: '', description: '', skills: '' });
-    const [assignedProjects, setAssignedProjects] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [genLoading, setGenLoading] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const dispatch = useDispatch();
+  const { userInfo } = useAuth();
+  const dispatch = useDispatch();
+  const [activeProjects, setActiveProjects] = useState([]);
+  const [completedProjects, setCompletedProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    const [totalEarnings, setTotalEarnings] = useState(0);
-    const [activeProjects, setActiveProjects] = useState([]);
-    const [completedProjects, setCompletedProjects] = useState([]);
+  // Profile form
+  const [headline, setHeadline] = useState(userInfo?.headline || '');
+  const [description, setDescription] = useState(userInfo?.description || '');
+  const [skills, setSkills] = useState(userInfo?.skills?.join(', ') || '');
+  const [saving, setSaving] = useState(false);
+  const [genLoading, setGenLoading] = useState(false);
+  const [expandModal, setExpandModal] = useState(false);
 
-    const fetchProfile = useCallback(async () => {
-        try {
-            const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/profile`, config);
-            setProfile({
-                name: data.name,
-                headline: data.headline || '',
-                description: data.description || '',
-                skills: data.skills ? data.skills.join(', ') : ''
-            });
-        } catch (error) {
-            toast.error("Gagal memuat profil.");
-        }
-    }, [userInfo.token]);
+  const fetchProjects = useCallback(async () => {
+    try {
+      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+      const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/projects/assigned`, config);
+      setActiveProjects(data.filter(p => p.status === 'open' || p.status === 'in_progress'));
+      setCompletedProjects(data.filter(p => p.status === 'closed'));
+    } catch (error) {
+      toast.error('Gagal memuat proyek.');
+    } finally {
+      setLoading(false);
+    }
+  }, [userInfo.token]);
 
-    const fetchAssignedProjects = useCallback(async () => {
-        try {
-            const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/projects/assigned`, config);
-            setAssignedProjects(data);
-        } catch (error) {
-            toast.error("Gagal memuat proyek yang ditugaskan.");
-        }
-    }, [userInfo.token]);
+  useEffect(() => {
+    dispatch(fetchUserProfile());
+    fetchProjects();
+  }, [dispatch, fetchProjects]);
 
-    useEffect(() => {
-        dispatch(fetchUserProfile());
-        const loadData = async () => {
-            setLoading(true);
-            await Promise.all([fetchProfile(), fetchAssignedProjects()]);
-            setLoading(false);
-        };
-        loadData();
-    }, [dispatch, fetchProfile, fetchAssignedProjects]);
+  useEffect(() => {
+    if (userInfo) {
+      setHeadline(userInfo.headline || '');
+      setDescription(userInfo.description || '');
+      setSkills(userInfo.skills?.join(', ') || '');
+    }
+  }, [userInfo]);
 
-    useEffect(() => {
-        if (assignedProjects) {
-            const active = assignedProjects.filter(p => p.status === 'in_progress' || p.status === 'pending_approval');
-            const completed = assignedProjects.filter(p => p.status === 'closed');
-            const earnings = completed.reduce((acc, project) => acc + (project.budget || 0), 0);
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+      const skillsArray = skills.split(',').map(s => s.trim()).filter(Boolean);
+      const { data } = await axios.put(`${import.meta.env.VITE_API_URL}/api/users/profile`, { headline, description, skills: skillsArray }, config);
+      dispatch(updateUserInfo(data));
+      toast.success('Profil berhasil diperbarui!');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Gagal memperbarui profil.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
-            setActiveProjects(active);
-            setCompletedProjects(completed);
-            setTotalEarnings(earnings);
-        }
-    }, [assignedProjects]);
+  const handleGenerateDescription = async () => {
+    if (!headline.trim()) {
+      toast.error('Isi headline terlebih dahulu sebelum generate deskripsi.');
+      return;
+    }
+    setGenLoading(true);
+    try {
+      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+      const keyPoints = `Headline: ${headline}, Keahlian: ${skills}`;
+      const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/generate-description`, { keyPoints }, config);
+      setDescription(data.description);
+      toast.success('Deskripsi dibuat AI!');
+    } catch (error) {
+      toast.error('Gagal membuat deskripsi.');
+    } finally {
+      setGenLoading(false);
+    }
+  };
 
-    const handleUpdateProfile = async (e) => {
-        e.preventDefault();
-        try {
-            const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            const skillsArray = profile.skills.split(',').map(skill => skill.trim()).filter(Boolean);
-            await axios.put(`${import.meta.env.VITE_API_URL}/api/users/profile`, { ...profile, skills: skillsArray }, config);
-            toast.success('Profil berhasil diperbarui!');
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Gagal memperbarui profil.');
-        }
-    };
-    
-    const handleGenerateDescription = async () => {
-        setGenLoading(true);
-        try {
-            const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            const keyPoints = `Nama: ${profile.name}, Headline: ${profile.headline}, Keahlian: ${profile.skills}`;
-            const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/generate-description`, { keyPoints }, config);
-            setProfile(p => ({ ...p, description: data.description }));
-            toast.success('Deskripsi berhasil dibuat oleh AI!');
-        } catch (error) {
-            toast.error('Gagal membuat deskripsi.');
-        } finally {
-            setGenLoading(false);
-        }
-    };
-    
-    const handleCompleteProject = async (projectId) => {
-        try {
-            const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            await axios.put(`${import.meta.env.VITE_API_URL}/api/projects/${projectId}/complete`, {}, config);
-            toast.success('Proyek ditandai untuk persetujuan!');
-            fetchAssignedProjects();
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Gagal menyelesaikan proyek.");
-        }
-    };
+  const totalEarnings = completedProjects.reduce((sum, p) => sum + (Number(p.budget) || 0), 0);
 
-    const isPrerequisitesMet = profile.headline.trim() !== '' && profile.skills.trim() !== '';
+  return (
+    <div className="min-h-[calc(100vh-64px)] bg-gray-50/50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {!userInfo.isVerified && <VerificationNotice />}
 
-    if (loading) return <div className="text-center py-10">Loading...</div>;
+        <motion.div initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.1 } } }}>
+          {/* Header */}
+          <motion.div variants={fadeUp} className="mb-8">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">Dashboard Creative</h1>
+            <p className="text-gray-500 mt-1">Kelola profil dan pantau proyek aktifmu.</p>
+          </motion.div>
 
-    return (
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            {!userInfo.isVerified && <VerificationNotice />}
-            <h1 className="text-3xl font-bold text-gray-800">Dashboard Pelaku Kreatif</h1>
-            <p className="mt-2 text-gray-600">Atur profil Anda dan kelola proyek yang sedang berjalan.</p>
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
+            <StatCard icon={FolderOpen} title="Proyek Aktif" value={activeProjects.length} gradient="from-primary-500 to-blue-500" />
+            <StatCard icon={CheckCircle2} title="Selesai" value={completedProjects.length} gradient="from-green-500 to-emerald-500" />
+            <StatCard icon={DollarSign} title="Total Pendapatan" value={`Rp ${totalEarnings.toLocaleString('id-ID')}`} gradient="from-purple-500 to-pink-500" />
+          </div>
 
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
-                    <div className="bg-blue-100 p-3 rounded-full"><Briefcase className="h-6 w-6 text-blue-600"/></div>
-                    <div className="ml-4">
-                        <h3 className="text-sm font-medium text-gray-500">Proyek Aktif</h3>
-                        <p className="mt-1 text-2xl font-semibold text-gray-900">{activeProjects.length}</p>
-                    </div>
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            {/* Profile Section */}
+            <motion.div variants={fadeUp} className="lg:col-span-3">
+              <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-purple-500 rounded-xl flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900">Profil Saya</h2>
+                    <p className="text-xs text-gray-500">Perbarui profil agar lebih mudah ditemukan</p>
+                  </div>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
-                    <div className="bg-green-100 p-3 rounded-full"><CheckCircle className="h-6 w-6 text-green-600"/></div>
-                    <div className="ml-4">
-                        <h3 className="text-sm font-medium text-gray-500">Proyek Selesai</h3>
-                        <p className="mt-1 text-2xl font-semibold text-gray-900">{completedProjects.length}</p>
-                    </div>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
-                    <div className="bg-yellow-100 p-3 rounded-full"><DollarSign className="h-6 w-6 text-yellow-600"/></div>
-                    <div className="ml-4">
-                        <h3 className="text-sm font-medium text-gray-500">Total Pendapatan</h3>
-                        <p className="mt-1 text-2xl font-semibold text-gray-900">
-                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalEarnings)}
-                        </p>
-                    </div>
-                </div>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-                <div className="lg:col-span-2 bg-white p-8 rounded-lg shadow-md">
-                    <h2 className="text-2xl font-bold mb-6">Edit Profil</h2>
-                    <form onSubmit={handleUpdateProfile} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Nama</label>
-                            <input type="text" value={profile.name} onChange={e => setProfile({...profile, name: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Headline (Contoh: UI/UX Designer)</label>
-                            <input type="text" value={profile.headline} onChange={e => setProfile({...profile, headline: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Keahlian (pisahkan dengan koma)</label>
-                            <input type="text" value={profile.skills} onChange={e => setProfile({...profile, skills: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Deskripsi</label>
-                            {!isPrerequisitesMet && (
-                                <p className="text-xs text-red-500 mt-1">Harap isi Headline dan Keahlian terlebih dahulu untuk mengaktifkan deskripsi.</p>
-                            )}
-                            <textarea
-                                value={profile.description}
-                                onChange={e => setProfile({...profile, description: e.target.value})}
-                                rows="5"
-                                disabled={!isPrerequisitesMet}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                placeholder={!isPrerequisitesMet ? 'Isi Headline dan Keahlian untuk memulai...' : 'Ceritakan tentang diri Anda...'}
-                            ></textarea>
-                            <div className="mt-2 flex gap-2">
-                                <button
-                                    type="button"
-                                    onClick={handleGenerateDescription}
-                                    disabled={genLoading || !isPrerequisitesMet}
-                                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed"
-                                >
-                                    <Wand2 className="h-4 w-4 mr-2" />
-                                    {genLoading ? 'Membuat...' : 'Buat dengan AI'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(true)}
-                                    disabled={!isPrerequisitesMet}
-                                    className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md shadow-sm bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:cursor-not-allowed"
-                                >
-                                    <Maximize2 className="h-4 w-4 mr-2" /> Perluas
-                                </button>
-                            </div>
-                        </div>
-                        <button type="submit" className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 inline-flex justify-center items-center">
-                            <Save className="h-4 w-4 mr-2" /> Simpan Perubahan
-                        </button>
-                    </form>
-                </div>
-                <div className="bg-white p-8 rounded-lg shadow-md">
-                    <h2 className="text-2xl font-bold mb-6">Proyek Aktif</h2>
-                    <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
-                    {activeProjects.length > 0 ? (
-                        activeProjects.map(project => (
-                        <div key={project._id} className="border p-4 rounded-md">
-                            <h3 className="font-bold text-lg">{project.title}</h3>
-                            <p className="text-sm text-gray-500 capitalize">Status: {project.status.replace('_', ' ')}</p>
-                            <div className="mt-4 flex gap-2">
-                                <Link to={`/project/${project._id}`} className="px-3 py-1 text-sm font-medium text-indigo-600 border border-gray-300 rounded-md hover:text-white hover:bg-indigo-600">Lihat Detail</Link>
-                                {project.status === 'in_progress' && (
-                                    <button onClick={() => handleCompleteProject(project._id)} className="px-3 py-1 text-sm font-medium text-green-600 border border-gray-300 rounded-md hover:text-white hover:bg-green-600">Tandai Selesai</button>
-                                )}
-                            </div>
-                        </div>
-                        ))
-                    ) : (
-                        <p className="text-gray-500">Tidak ada proyek aktif.</p>
-                    )}
-                    </div>
+                <form onSubmit={handleSaveProfile} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Headline</label>
+                    <input
+                      type="text"
+                      value={headline}
+                      onChange={e => setHeadline(e.target.value)}
+                      placeholder="Contoh: UI/UX Designer"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all"
+                    />
+                  </div>
 
-                    <h2 className="text-2xl font-bold my-6 border-t pt-6">Riwayat Proyek</h2>
-                    <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
-                    {completedProjects.length > 0 ? (
-                        completedProjects.map(project => (
-                        <div key={project._id} className="border p-4 rounded-md bg-gray-50">
-                            <div className="flex justify-between items-start">
-                                <h3 className="font-semibold text-gray-800 flex-1">{project.title}</h3>
-                                {project.budget && (
-                                    <p className="text-sm font-semibold text-green-700 ml-2">
-                                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(project.budget)}
-                                    </p>
-                                )}
-                            </div>
-                            <Link to={`/project/${project._id}`} className="px-3 py-1 text-sm font-medium text-indigo-600 border border-gray-300 rounded-md hover:text-white hover:bg-indigo-600 mt-2 inline-block">Lihat Detail</Link>
-                        </div>
-                        ))
-                    ) : (
-                        <p className="text-gray-500">Anda belum menyelesaikan proyek.</p>
-                    )}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-sm font-semibold text-gray-700">Deskripsi</label>
+                      <button type="button" onClick={() => setExpandModal(true)} className="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                        <Expand className="w-3 h-3" /> Expand
+                      </button>
                     </div>
-                </div>
-            </div>
+                    <textarea
+                      value={description}
+                      onChange={e => setDescription(e.target.value)}
+                      rows="4"
+                      placeholder="Ceritakan tentang dirimu..."
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all resize-none"
+                    />
+                    <div className="flex justify-end mt-2">
+                      <button type="button" onClick={handleGenerateDescription} disabled={genLoading || !headline.trim()} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed transition-all">
+                        {genLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                        {genLoading ? 'Membuat...' : 'AI Generate'}
+                      </button>
+                    </div>
+                  </div>
 
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white w-full max-w-2xl rounded-lg shadow-lg p-6 relative">
-                        <button
-                            onClick={() => setIsModalOpen(false)}
-                            className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-                        >
-                            <X className="h-5 w-5" />
-                        </button>
-                        <h3 className="text-lg font-bold mb-4">Edit Deskripsi</h3>
-                        <textarea
-                            value={profile.description}
-                            onChange={e => setProfile({...profile, description: e.target.value})}
-                            rows="12"
-                            className="w-full border border-gray-300 rounded-md shadow-sm p-3"
-                        ></textarea>
-                        <div className="mt-4 flex justify-between">
-                            <button
-                                type="button"
-                                onClick={handleGenerateDescription}
-                                disabled={genLoading}
-                                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300"
-                            >
-                                <Wand2 className="h-4 w-4 mr-2" />
-                                {genLoading ? 'Membuat...' : 'Buat dengan AI'}
-                            </button>
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                            >
-                                Tutup
-                            </button>
-                        </div>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Keahlian (pisahkan koma)</label>
+                    <input
+                      type="text"
+                      value={skills}
+                      onChange={e => setSkills(e.target.value)}
+                      placeholder="React, Node.js, UI Design"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all"
+                    />
+                  </div>
+
+                  <button type="submit" disabled={saving} className="w-full flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-purple-600 rounded-xl hover:shadow-lg disabled:opacity-60 transition-all duration-300">
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {saving ? 'Menyimpan...' : 'Simpan Profil'}
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+
+            {/* Projects Section */}
+            <motion.div variants={fadeUp} className="lg:col-span-2 space-y-6">
+              {/* Active Projects */}
+              <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+                  <FolderOpen className="w-5 h-5 text-primary-500" />
+                  <h2 className="text-lg font-bold text-gray-900">Proyek Aktif</h2>
                 </div>
-            )}
-        </div>
-    );
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+                  </div>
+                ) : activeProjects.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Briefcase className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500 text-sm">Belum ada proyek aktif.</p>
+                    <Link to="/projects" className="inline-flex items-center gap-1 text-sm font-semibold text-primary-600 mt-2 hover:text-primary-700">
+                      Jelajahi Proyek
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {activeProjects.map(project => {
+                      const status = statusConfig[project.status] || statusConfig.open;
+                      return (
+                        <Link key={project._id} to={`/project/${project._id}`} className="block px-6 py-4 hover:bg-gray-50/50 transition-colors">
+                          <div className="flex items-center justify-between mb-1">
+                            <h3 className="text-sm font-bold text-gray-900 hover:text-primary-600 truncate">{project.title}</h3>
+                            <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md ${status.color}`}>{status.label}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 line-clamp-1">{project.description}</p>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Completed Projects */}
+              {completedProjects.length > 0 && (
+                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-green-500" />
+                    <h2 className="text-lg font-bold text-gray-900">Riwayat Proyek</h2>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {completedProjects.map(project => (
+                      <Link key={project._id} to={`/project/${project._id}`} className="block px-6 py-4 hover:bg-gray-50/50 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-bold text-gray-900 truncate">{project.title}</h3>
+                          <span className="text-xs font-semibold text-green-600">Rp {Number(project.budget || 0).toLocaleString('id-ID')}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Expand Description Modal */}
+      <AnimatePresence>
+        {expandModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <h2 className="text-lg font-bold text-gray-900">Edit Deskripsi</h2>
+                <button onClick={() => setExpandModal(false)} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-400" /></button>
+              </div>
+              <div className="p-6">
+                <textarea
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  rows="12"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all resize-none"
+                />
+                <div className="flex justify-end gap-3 mt-4">
+                  <button type="button" onClick={handleGenerateDescription} disabled={genLoading || !headline.trim()} className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed transition-all">
+                    {genLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                    {genLoading ? 'Membuat...' : 'AI Generate'}
+                  </button>
+                  <button onClick={() => setExpandModal(false)} className="px-4 py-2 text-xs font-semibold text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors">
+                    Selesai
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 };
 
 export default CreativeDashboardPage;
