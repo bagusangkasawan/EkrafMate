@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import axios from 'axios';
 import { logout } from './redux/slices/authSlice';
@@ -79,7 +79,7 @@ function App() {
           <Route path="/verification-success" element={<VerificationPage success />} />
           <Route path="/projects" element={<ProjectListPage />} />
           <Route path="/project/:id" element={<ProjectDetailPage />} />
-          
+
           {/* Rute Terproteksi */}
           <Route element={<ProtectedRoute allowedRoles={['creative', 'client', 'admin']} />}>
             <Route path="/dashboard" element={<DashboardRedirect />} />
