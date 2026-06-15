@@ -1,6 +1,9 @@
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import React, { useEffect } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import axios from 'axios';
+import { logout } from './redux/slices/authSlice';
+import toast, { Toaster } from 'react-hot-toast';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/home/HomePage';
@@ -22,9 +25,47 @@ import ProjectListPage from './pages/projects/ProjectListPage';
 import ProjectDetailPage from './pages/projects/ProjectDetailPage';
 import ProjectEditPage from './pages/projects/ProjectEditPage';
 
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'smooth'
+    });
+  }, [pathname]);
+
+  return null;
+};
+
 function App() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response && error.response.status === 401) {
+          // Token expired or invalid
+          dispatch(logout());
+          sessionStorage.removeItem('chatbotMessages');
+          toast.error('Sesi Anda telah berakhir. Silakan login kembali.', { id: 'session-expired' });
+          navigate('/login');
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, [navigate, dispatch]);
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 font-sans">
+      <ScrollToTop />
       <Header />
       <main className="flex-grow">
         <Routes>

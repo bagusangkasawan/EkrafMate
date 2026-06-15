@@ -12,9 +12,8 @@ const protect = asyncHandler(async (req, res, next) => {
       req.user = await User.findById(decoded.id).select('-password');
       next();
     } catch (error) {
-      console.error(error);
       res.status(401);
-      throw new Error('Not authorized, token failed');
+      throw new Error('Sesi Anda telah berakhir. Silakan login kembali.');
     }
   }
 
@@ -22,6 +21,25 @@ const protect = asyncHandler(async (req, res, next) => {
     res.status(401);
     throw new Error('Not authorized, no token');
   }
+});
+
+// Optional auth: attach user if token present, otherwise continue as guest
+const optionalAuth = asyncHandler(async (req, res, next) => {
+  let token;
+  req.user = null;
+
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    try {
+      token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await User.findById(decoded.id).select('-password');
+    } catch (error) {
+      // Token invalid, continue as guest
+      console.warn('Optional auth: invalid token, proceeding as guest');
+    }
+  }
+
+  next();
 });
 
 const isClient = (req, res, next) => {
@@ -60,4 +78,4 @@ const isAdminOrClient = (req, res, next) => {
     }
 };
 
-export { protect, isClient, isCreative, isAdmin, isAdminOrClient };
+export { protect, optionalAuth, isClient, isCreative, isAdmin, isAdminOrClient };
